@@ -643,3 +643,320 @@ def test_set_comparison():
     set22 = set(["身材", "年龄", "性名", "体重"])
     assert set11 == set22
 ```
+
+### 测试脚手架 - fixture
+
+Pytest fixture被设计成显式的、模块化的和可扩展的。
+
+
+在测试中，fixture为测试提供了一个定义的、可靠的和一致的上下文。这可以包括环境(例如配置了已知参数的数据库)或内容(例如数据集)。
+
+fixture定义了构成测试安排阶段的步骤和数据(参见测试剖析)。在`pytest`中，它们是您定义的用于此目的的函数。它们也可以用来定义测试的行为阶段;对于设计更复杂的测试，这是一种强大的技术。由fixture设置的服务、状态或其他操作环境由测试函数访问。
+
+
+#### xUnit风格的fixture
+
+`pytest`支持类似 `unittest`风格的fixture，即 `setup`和`teardown`。
+
+__函数fixtrue__
+
+首先，创建`test_func.py`测试文件。
+
+```py
+# 功能函数
+def multiply(a, b):
+    return a * b
+
+
+# =====fixtures========
+def setup_module(module):
+    print("setup_module================>")
+
+
+def teardown_module(module):
+    print("teardown_module=============>")
+
+
+def setup_function(function):
+    print("setup_function------>")
+
+
+def teardown_function(function):
+    print("teardown_function--->")
+
+
+# =====测试用例========
+def test_multiply_3_4():
+    print('test_numbers_3_4')
+    assert multiply(3, 4) == 12
+
+
+def test_multiply_a_3():
+    print('test_strings_a_3')
+    assert multiply('a', 3) == 'aaa'
+```
+
+__代码说明__
+
+`setup_module`/`teardown_module`: 测试`模块`级别的fixture，即 文件级别。
+
+`setup_function`/`teardown_function`: 测试`函数`级别的fixture。
+
+__执行测试：__
+
+```py
+$ pytest -qs .\test_func.py
+
+setup_module================>
+setup_function------>
+test_numbers_3_4
+.teardown_function--->
+setup_function------>
+test_strings_a_3
+.teardown_function--->
+teardown_module=============>
+
+2 passed in 0.01s
+
+```
+
+
+__方法fixtrue__
+
+首先，创建`test_method.py`测试文件。
+
+```py
+# 功能函数
+def multiply(a, b):
+    return a * b
+
+
+class TestMultiply:
+    # =====fixtures========
+    @classmethod
+    def setup_class(cls):
+        print("setup_class=========>")
+
+    @classmethod
+    def teardown_class(cls):
+        print("teardown_class=========>")
+
+    def setup_method(self, method):
+        print("setup_method----->>")
+
+    def teardown_method(self, method):
+        print("teardown_method-->>")
+
+    # =====测试用例========
+    def test_numbers_5_6(self):
+        print('test_numbers_5_6')
+        assert multiply(5, 6) == 30
+
+    def test_strings_b_2(self):
+        print('test_strings_b_2')
+        assert multiply('b', 2) == 'bb'
+```
+
+__代码说明__
+
+`setup_class`/`teardown_class`: 测试`类`级别的fixture，需要使用`@classmethod`装饰器。
+
+`setup_method`/`teardown_method`: 测试`方法`级别的fixture。
+
+__执行测试：__
+
+```py
+$ pytest -qs .\test_method.py
+
+setup_class=========>
+setup_method----->>
+test_numbers_5_6
+.teardown_method-->>
+setup_method----->>
+test_strings_b_2
+.teardown_method-->>
+teardown_class=========>
+
+2 passed in 0.01s
+```
+
+#### `@pytest.fixture` 装饰器
+
+
+在一个基本级别上，测试函数通过将它们声明为参数来请求它们所需的fixture。
+
+当`pytest`运行测试时，它会查看该测试函数签名中的参数，然后搜索与这些参数名称相同的`fixture`。一旦`pytest`找到它们，它就运行这些`fixture`，捕获它们返回的内容(如果有的话)，并将这些对象作为参数传递给test函数。
+
+__基本使用__
+
+```py
+import pytest
+
+
+@pytest.fixture()
+def init_env():
+    print("init env...")
+    return True
+
+
+def test_case(init_env):
+    ret = init_env
+    if ret:
+        print("exe test case")
+```
+
+在这个例子中，`test_case` “*Requests*”了`init_env`(即`def test_case(init_env):`)，当`pytest`看到这个时，它将执行`init_env`固定函数，并将它返回的对象作为`init_env`参数传递给`test_case`。
+
+如果我们用手来做，大概会发生这样的情况:
+
+```py
+def init_env():
+    print("init env...")
+    return True
+
+
+def test_case(init_env):
+    ret = init_env
+    if ret is True:
+        print("exe test case")
+
+
+if __name__ == '__main__':
+    ie = init_env()
+    test_case(init_env=ie)
+```
+
+__fixture请求其他fixture__
+
+`pytest`最大的优势之一是其极其灵活的夹具系统。它允许我们将复杂的测试需求简化为更简单和有组织的功能，我们只需要让每个功能描述它们所依赖的东西。我们将在后面进一步讨论这个问题，但是现在，这里有一个快速示例来演示`fixture`如何使用其他`fixture`。
+
+```py
+import pytest
+
+
+# Arrange
+@pytest.fixture
+def first_entry():
+    return "a"
+
+
+# Arrange
+@pytest.fixture
+def order(first_entry):
+    return [first_entry]
+
+
+def test_string(order):
+    # Act
+    order.append("b")
+    # Assert
+    assert order == ["a", "b"]
+```
+
+__一个`test`/`fixture`可以请求多个fixture__
+
+测试和fixture并不局限于一次请求一个fixture。他们想要多少就可以要多少。下面是另一个快速演示的例子:
+
+```py
+import pytest
+
+
+# Arrange
+@pytest.fixture
+def first_entry():
+    return "a"
+
+
+# Arrange
+@pytest.fixture
+def second_entry():
+    return 2
+
+
+# Arrange
+@pytest.fixture
+def order(first_entry, second_entry):
+    return [first_entry, second_entry]
+
+
+# Arrange
+@pytest.fixture
+def expected_list():
+    return ["a", 2, 3.0]
+
+
+def test_string_1(order, expected_list):
+    # Act
+    order.append(3.0)
+    # Assert
+    assert order == expected_list
+
+
+def test_string_2(order, expected_list):
+    # Act
+    order.append(4.0)
+    # Assert
+    assert order == expected_list
+```
+
+
+__自动的使用fixture__
+
+有时，您可能希望拥有一个(甚至几个)您知道所有测试都将依赖的fixture。“自动使用” fixture是一种方便的方法，可以使所有测试自动请求它们。这可以减少大量冗余请求，甚至可以提供更高级的fixture使用(后面会详细介绍)。
+
+```py
+import pytest
+
+
+@pytest.fixture
+def first_entry():
+    return "a"
+
+
+@pytest.fixture
+def order(first_entry):
+    return []
+
+
+@pytest.fixture(autouse=True)
+def append_first(order, first_entry):
+    return order.append(first_entry)
+
+
+def test_string_only(order, first_entry):
+    assert order == [first_entry]
+
+
+def test_string_and_int(order, first_entry):
+    order.append(2)
+    assert order == [first_entry, 2]
+
+```
+
+在本例中，`append_first` fixture是一个自定义fixture。因为它是自动发生的，所以两个测试都是
+受到它的影响，即使没有测试要求它。但这并不意味着他们不能被要求;只是事实并非如此
+必要的。
+
+
+__fixture范围__
+
+fixture在第一次被测试请求时创建，并根据它们的作用域销毁:
+
+- `function`: 默认作用域，测试结束时销毁夹具。
+
+- `class`: 在类中最后一个测试的拆解期间，fixture被销毁。
+
+- `module`: 在模块中最后一次测试的拆卸过程中，夹具被销毁。
+
+- `package`: 在定义fixture的包(包括其中的子包和子目录)中的最后一个测试的拆解期间，fixture被销毁。
+
+- `session`: 夹具在测试会话结束时被销毁。
+
+> 涉及到`conftest.py` 文件，后面介绍到`conftest.py`时候再介绍。
+
+
+__Teardown/Cleanup (Fixture的后置)__
+
+1. 使用 `yield` 迭代器
+
+
