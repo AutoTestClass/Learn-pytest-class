@@ -458,5 +458,188 @@ __参数说明__
 - `--durations-min=N`：要包含在最慢列表中的最小时长（秒）。默认：0.005。
 
 
-### 测试断言
+### 测试断言 - assert
 
+在`pytest`中，使用Python的`assert`语句进行断言。
+
+#### 基本使用
+
+通过一个例子演示基本用法。
+
+```py
+"""
+test_assert.py
+功能：用于计算a与b 相加的和
+"""
+
+
+def add(a, b):
+    return a + b
+
+
+# 功能：用于判断素数
+def is_prime(n):
+    if n <= 1:
+        return False
+    for i in range(2, n):
+        if n % i == 0:
+            return False
+        return True
+
+
+# 测试相等
+def test_add_1():
+    assert add(3, 4) == 7
+
+
+# 测试不相等
+def test_add_2():
+    assert add(17, 22) != 50
+
+
+# 测试小于或等于
+def test_add_3():
+    assert add(17, 22) <= 50
+
+
+# 测试大于或等于
+def test_add_4():
+    assert add(17, 22) >= 38
+
+
+# 测试包含
+def test_in():
+    a = "hello"
+    b = "he"
+    assert b in a
+
+
+# 测试不包含
+def test_not_in():
+    a = "hello"
+    b = "hi"
+    assert b not in a
+
+
+# 判断是否为True
+def test_true_1():
+    assert is_prime(13)
+
+
+# 判断是否为True
+def test_true_2():
+    assert is_prime(7) is True
+
+
+# 判断是否不为True
+def test_true_3():
+    assert not is_prime(4)
+
+
+# 判断是否不为True
+def test_true_4():
+    assert is_prime(6) is not True
+
+
+# 判断是否为False
+def test_false_1():
+    assert is_prime(8) is False
+```
+
+__使用说明__
+
+跟`if`语句相似，我们可以通过`assert`语句写各种判断条件。
+
+* `==`: 等于
+* `!=`: 不等于
+* `>=`: 大于等于
+* `<=`: 小于等于
+* `is`: 是
+* `not is`: 不是
+* `in`: 包含
+* `not in`: 不包含
+* `is True`: 是`True`
+* `is False`: 是`False`
+* ...
+
+
+#### 更多使用
+
+* 断言，自定义异常信息
+
+```py
+def f():
+    return 7
+
+
+def test_f():
+    """自定义错误信息"""
+    assert f() % 2 == 0, "value was odd, should be even"
+```
+
+* 断言，自定义异常信息
+
+```py
+def f():
+    return 7
+
+
+def test_f():
+    """自定义错误信息"""
+    assert f() % 2 == 0, "value was odd, should be even"
+```
+
+
+* 断言， 异常类型
+
+```py
+import pytest
+
+def test_zero_division():
+    """断言异常类型 """
+    with pytest.raises(ZeroDivisionError):
+        1 / 0
+```
+
+* 断言， 匹配异常类型
+
+```py
+import pytest
+
+
+def myfunc():
+    raise ValueError("Exception 123 raised")
+
+
+def test_match():
+    """匹配异常错误信息"""
+    with pytest.raises(ValueError, match=r".* 123 .*"):
+        myfunc()
+```
+
+
+* 断言， 异常信息
+
+```py
+import pytest
+
+def test_recursion_depth():
+    """断言异常信息 -- 最大递归 """
+    with pytest.raises(RuntimeError) as excinfo:
+        def f():
+            f()
+
+        f()
+        assert "maximum recursion" in str(excinfo.value)
+```
+
+* 断言， set列表比较
+
+```py
+
+def test_set_comparison():
+    """断言组- set 比较"""
+    set11 = set(["身高", "年龄", "性别", "体重"])
+    set22 = set(["身材", "年龄", "性名", "体重"])
+    assert set11 == set22
+```
