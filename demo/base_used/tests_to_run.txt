@@ -1,0 +1,2 @@
+sample/test_sample.py::TestClass::test_one
+sample/test_sample.py::TestClass::test_two

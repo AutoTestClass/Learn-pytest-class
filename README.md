@@ -115,7 +115,7 @@ class TestClass:
 2. 直接使用Python提供的`assert` 语句进行断言，方法用更加简洁，当然，这个有利有弊。
 
 
-### 运行测试
+### 运行测试（默认发现）
 
 pytest 运行测试有两种方式：`pytest` 命令 和 `pytest.main()` 方法。
 
@@ -257,3 +257,135 @@ if __name__ == '__main__':
     # pytest.main(["--no-summary"])
     pytest.main(["--no-header", "--no-summary"])  # 多个参数一起用。
 ```
+
+
+### 运行测试（控制粒度）
+
+除了默认`pytest`发现测试用例并执行，更多时候，我们需要控制测试用例的颗粒度，就是说，我们仅仅想执行某个`目录`或`文件`用例，甚至是某个`类`或`方法`。
+
+**目录结构:**
+
+```
+└───sample
+|   └───test_sample.py
+```
+
+#### 用例粒度
+
+以下是单个粒度的执行。
+
+
+```shell
+$ pytest sample   # 目录
+
+$ pytest sample\test_sample.py  # 文件
+
+$ pytest sample\test_sample.py  # 文件
+
+$ pytest sample\test_sample.py::test_answer  # 函数
+
+$ pytest sample\test_sample.py::TestClass  # 类
+
+$ pytest sample\test_sample.py::TestClass::test_one  # 方法
+```
+
+#### 多个组合
+
+有时候，我们想同时执行A文件b测试用例 和 B文件的a测试用例。`pytest`允许指定多个用例。
+
+```shell
+$ pytest sample\test_sample.py::TestClass::test_one  sample\test_sample.py::TestClass::test_two
+```
+
+🔖 `pytest 8.2` 新写法 。
+
+显然，上面的写法有些麻烦，所以，我们可以将其放到一个文件中执行。
+
+```txt
+sample/test_sample.py::TestClass::test_one
+sample/test_sample.py::TestClass::test_two
+```
+
+通过`pytest @file_name.txt`运行测试。
+
+```
+$ pytest @tests_to_run.txt
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
+rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used
+collected 2 items / 2 deselected / 0 selected
+
+============================ 2 deselected in 0.01s ============================
+```
+
+注明：windows `PowerShell` 不支持。可以使用`git bash`执行。
+
+
+------------
+
+### 运行测试时间
+
+分析测试的运行时间是比较重要的功能。`pytest` 提供了 `--durations`参数来执行。
+
+为了更好的演示，我们先准备一组测试用例。
+
+```py
+# test_slow.py
+from time import sleep
+
+
+def test_sleep_one():
+    """测试函数"""
+    sleep(1)
+
+
+def test_sleep_two():
+    """测试函数"""
+    sleep(2)
+
+
+def test_sleep_three():
+    """测试函数"""
+    sleep(3)
+```
+
+__运行测试__
+
+找最慢的1条用例。
+
+```shell
+$ pytest --durations=1
+=================================== test session starts ==================================
+platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
+rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\slow
+collected 3 items
+
+test_slow.py ...                                                                                                 [100%]
+
+=================================== slowest 1 durations ===================================
+3.00s call     test_slow.py::test_sleep_three
+=================================== 3 passed in 6.03s =====================================
+```
+
+找出超过1s，最慢的2条用例。
+
+```shell
+pytest --durations=2 --durations-min=1.0
+=================================== test session starts ==================================
+platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
+rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\slow
+collected 3 items
+
+test_slow.py ...                                                                                                 [100%]
+
+=================================== slowest 2 durations ===================================
+3.00s call     test_slow.py::test_sleep_three
+2.00s call     test_slow.py::test_sleep_two
+=================================== 3 passed in 6.02s =====================================
+
+```
+
+__参数说明__
+
+- `--durations=N`：显示最慢的N个设置/测试时长（N=0表示全部）
+- `--durations-min=N`：要包含在最慢列表中的最小时长（秒）。默认：0.005。
