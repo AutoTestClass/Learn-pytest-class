@@ -132,7 +132,7 @@ platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
 rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\sample
 collected 3 items
 
-test_sample.py F.F                                                                                               [100%]
+test_sample.py F.F                                                    [100%]
 
 ================================= FAILURES ==========================================
 __________________________-______ test_answer _______________________________________
@@ -211,7 +211,7 @@ platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
 rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\sample
 collected 3 items
 
-test_sample.py F.F                                                                                               [100%]
+test_sample.py F.F                                                              [100%]
 
 ======================================= FAILURES =======================================
 ______________________________________ test_answer _____________________________________
@@ -307,7 +307,7 @@ sample/test_sample.py::TestClass::test_two
 
 通过`pytest @file_name.txt`运行测试。
 
-```
+```shell
 $ pytest @tests_to_run.txt
 ============================= test session starts =============================
 platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
@@ -366,14 +366,14 @@ class TestSub:
 
 __运行测试__
 
-```
-pytest -k add test_calculator.py
+```shell
+$ pytest -k add test_calculator.py
 ================================== test session starts ==================================
 platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
 rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\sample
 collected 4 items / 2 deselected / 2 selected
 
-test_calculator.py ..                                                                                            [100%]
+test_calculator.py ..                                                    [100%]
 
 ============================= 2 passed, 2 deselected in 0.01s ============================
 ```
@@ -427,7 +427,7 @@ platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
 rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\slow
 collected 3 items
 
-test_slow.py ...                                                                                                 [100%]
+test_slow.py ...                                                                [100%]
 
 =================================== slowest 1 durations ===================================
 3.00s call     test_slow.py::test_sleep_three
@@ -443,7 +443,7 @@ platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
 rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\slow
 collected 3 items
 
-test_slow.py ...                                                                                                 [100%]
+test_slow.py ...                                                               [100%]
 
 =================================== slowest 2 durations ===================================
 3.00s call     test_slow.py::test_sleep_three
@@ -456,6 +456,38 @@ __参数说明__
 
 - `--durations=N`：显示最慢的N个设置/测试时长（N=0表示全部）
 - `--durations-min=N`：要包含在最慢列表中的最小时长（秒）。默认：0.005。
+
+### 运行unittest
+
+`pytest` 支持运行unittest编写的测试用例。
+
+```py
+# test_unittest.py
+from unittest import TestCase
+
+
+class MyTest(TestCase):
+
+    def test_case(self):
+        self.assertEqual(2 + 2, 4)
+```
+
+
+__运行测试__
+
+
+```shell
+$ pytest -v test_unittest.py
+======================================= test session starts =========================================
+platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0 -- C:\Users\fnngj\.virtualenvs\Learn-pytest-class-k2175urw\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\unit_test
+collected 1 item
+
+test_unittest.py::MyTest::test_case PASSED                                                   [100%]
+
+========================================= 1 passed in 0.01s =========================================
+```
 
 
 ### 测试断言 - assert
