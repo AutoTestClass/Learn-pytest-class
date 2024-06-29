@@ -274,7 +274,6 @@ if __name__ == '__main__':
 
 以下是单个粒度的执行。
 
-
 ```shell
 $ pytest sample   # 目录
 
@@ -321,7 +320,75 @@ collected 2 items / 2 deselected / 0 selected
 注明：windows `PowerShell` 不支持。可以使用`git bash`执行。
 
 
-------------
+#### 筛选方法
+
+在一个范围内通过`关键字`筛选，无疑是简单的用法。`pytest -k`参数可以实现。
+
+为了更好的演示，我们先准备一组测试用例。
+
+```py
+# test_calculator.py
+
+class Calculator:
+
+    def add(self, a, b):
+        return a + b
+
+    def sub(self, a, b):
+        return a - b
+
+
+class TestAdd:
+
+    def test_add_int_1(self):
+        cal = Calculator()
+        ret = cal.add(1, 2)
+        assert ret == 3
+
+    def test_add_str_2(self):
+        cal = Calculator()
+        ret = cal.add("hello", "world")
+        assert ret == "helloworld"
+
+
+class TestSub:
+
+    def test_sub_int_1(self):
+        cal = Calculator()
+        ret = cal.sub(1, 2)
+        assert ret == -1
+
+    def test_sub_float_2(self):
+        cal = Calculator()
+        ret = cal.sub(1.1, 2.2)
+        assert ret == -1.1
+```
+
+__运行测试__
+
+```
+pytest -k add test_calculator.py
+================================== test session starts ==================================
+platform win32 -- Python 3.11.9, pytest-8.2.2, pluggy-1.5.0
+rootdir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\sample
+collected 4 items / 2 deselected / 2 selected
+
+test_calculator.py ..                                                                                            [100%]
+
+============================= 2 passed, 2 deselected in 0.01s ============================
+```
+
+__参数说明__
+
+- `-k EXPRESSION`：仅运行与给定子字符串表达式匹配的测试。表达式是一个 Python 可评估的表达式，其中所有名称都将与测试名称及其父类进行子字符串匹配。例如：`-k test_method or test_other` 匹配名称中包含 `test_method` 或 `test_other` 的所有测试函数和类，而 `-k 'not test_method'` 匹配名称中不包含 'test_method' 的测试。`-k 'not test_method and not test_other'` 将排除这些匹配项。此外，关键字还会与在 `'extra_keyword_matches'` 集合中包含额外名称的类和函数，以及直接为其分配名称的函数进行匹配。匹配是不区分大小写的。
+
+```shell
+$ pytest -k add test_calculator.py  # 测试用例名称包含 “add”
+
+$ pytest -k 'not add' test_calculator.py  # 测试用例名称不包含 “add”
+
+$ pytest -vk 'not add and not 1' test_calculator.py # 测试用例名称不包含 “add” 并且 不包含 “1”
+```
 
 ### 运行测试时间
 
