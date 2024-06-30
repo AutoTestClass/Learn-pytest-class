@@ -991,4 +991,94 @@ __Teardown/Cleanup (Fixture的后置)__
 
 1. 使用 `yield` 迭代器
 
+```py
+import pytest
 
+
+class Counter:
+    """简单的计数器类"""
+
+    def __init__(self):
+        self.value = 0
+
+    def increment(self):
+        """+1"""
+        self.value += 1
+
+    def get_value(self):
+        """获取value"""
+        return self.value
+
+
+@pytest.fixture
+def counter():
+    c = Counter()
+    yield c
+    c.value = 0  # 在测试完成后重置计数器
+    print("end c.value-->", c.value)
+
+
+# 使用 counter fixture 的测试函数
+def test_counter_increment(counter):
+    assert counter.get_value() == 0
+    counter.increment()
+    assert counter.get_value() == 1
+    counter.increment()
+    assert counter.get_value() == 2
+```
+
+注意：在这个例子中，我们并没有真正"迭代" `counter`对象，但`yield`的使用允许我们在测试结束后执行清理代码（将counter的值重置为0）。  
+
+然而，`yield`的这种用法在创建和管理测试所需的临时资源（如数据库连接、临时文件、模拟对象等）时非常有用。
+
+
+2. 直接添加`finalizer`终结器
+
+虽然产量固定装置被认为是更干净、更直接的选择，但还有另一种选择，那就是是将`“finalizer”`函数直接添加到测试的请求上下文对象中。它带来了与`yield` fixture类似的结果，但是需要更多的篇幅。
+
+使用 `request.addfinalizer` 的 fixture。
+
+```py
+import pytest
+
+
+class Counter:
+    """简单的计数器类"""
+
+    def __init__(self):
+        self.value = 0
+
+    def increment(self):
+        """+1"""
+        self.value += 1
+
+    def get_value(self):
+        """获取value"""
+        return self.value
+
+
+@pytest.fixture
+def counter(request):
+    c = Counter()
+
+    def reset_counter():
+        c.value = 0
+
+    request.addfinalizer(reset_counter)  # 注册清理函数
+    print("end c.value-->", c.value)
+    return c
+
+
+# 使用 counter fixture 的测试函数
+def test_counter_increment(counter):
+    assert counter.get_value() == 0
+    counter.increment()
+    assert counter.get_value() == 1
+    counter.increment()
+    assert counter.get_value() == 2
+```
+
+在这个例子中，当 `test_counter_increment` 测试函数执行完毕后，`reset_counter`函数会被自动调用，将计数器的值重置为 0。这与我们在前面的例子中使用 `yield` 实现的功能相同，但使用了不同的 API。
+
+
+> 终结器按照先入后出的顺序执行。对于yield fixture，要运行的第一个拆装代码是从最右边的fixture，即最后一个测试参数开始的。
