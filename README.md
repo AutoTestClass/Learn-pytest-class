@@ -500,8 +500,7 @@ test_unittest.py::MyTest::test_case PASSED                                      
 
 ```py
 """
-test_assert.py
-功能：用于计算a与b 相加的和
+test_assert_base.py
 """
 
 
@@ -559,23 +558,29 @@ def test_true_1():
 
 
 # 判断是否为True
-def test_true_2():
+def test_is_true():
     assert is_prime(7) is True
 
 
+# 判断是否为False
+def test_is_false():
+    assert is_prime(8) is False
+
+
 # 判断是否不为True
-def test_true_3():
+def test_not_true():
     assert not is_prime(4)
 
 
 # 判断是否不为True
-def test_true_4():
+def test_is_not_true():
     assert is_prime(6) is not True
 
 
-# 判断是否为False
-def test_false_1():
-    assert is_prime(8) is False
+# 判断是否不为False
+def test_is_not_false():
+    assert is_prime(7) is not False
+
 ```
 
 __使用说明__
