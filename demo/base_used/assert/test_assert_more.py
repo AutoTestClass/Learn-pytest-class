@@ -38,10 +38,14 @@ def test_recursion_depth():
 
 
 def test_set_comparison():
-    """断言组- set 比较"""
-    # set1 = set("1308")
-    # set2 = set("8035")
-    # assert set1 == set2
+    """断言组 - set 比较"""
+    # 一般情况，断言第一个失败，不会走到第二个断言
+    # print("assert 1")
+    # assert 1 == 2
+    # print("assert 2")
+    # assert 2 == 2
+
+    # set()断言可以识别列表中的所有差异。
     set11 = set(["身高", "年龄", "性别", "体重"])
     set22 = set(["身材", "年龄", "性名", "体重"])
     assert set11 == set22

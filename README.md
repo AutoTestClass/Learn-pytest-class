@@ -670,7 +670,7 @@ def test_recursion_depth():
         assert "maximum recursion" in str(excinfo.value)
 ```
 
-* 断言， set列表比较
+* 断言， `set()`列表比较
 
 ```py
 
@@ -680,6 +680,27 @@ def test_set_comparison():
     set22 = set(["身材", "年龄", "性名", "体重"])
     assert set11 == set22
 ```
+
+断言`set()`列表，运行结果，可以识别：`名别`和`姓名`，`身高`和`身材`的差异。
+
+```
+....
+
+    def test_set_comparison():
+        set11 = set(["身高", "年龄", "性别", "体重"])
+        set22 = set(["身材", "年龄", "性名", "体重"])
+>       assert set11 == set22
+E       AssertionError: assert {'体重', '年龄', '性别', '身高'} == {'体重', '年龄', '性名', '身材'}
+E
+E         Extra items in the left set:
+E         '身高'
+E         '性别'
+E         Extra items in the right set:
+E         '性名'
+E         '身材'
+E         Use -v to get more diff
+```
+
 
 ### 测试脚手架 - fixture
 
