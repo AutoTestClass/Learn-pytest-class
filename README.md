@@ -1108,3 +1108,143 @@ def test_counter_increment(counter):
 
 
 > 终结器按照先入后出的顺序执行。对于yield fixture，要运行的第一个拆装代码是从最右边的fixture，即最后一个测试参数开始的。
+
+__Fixture参数化__
+
+Fixture函数可以参数化，在这种情况下，它们将被多次调用，每次执行一组相关测试，即依赖于此fixture的测试。测试函数通常不需要知道它们的重新运行。fixture参数化有助于为组件编写详尽的功能测试，这些组件本身可以在其中配置多种方式。
+
+```py
+import pytest
+
+
+@pytest.fixture(params=["www.baidu.com", "www.bing.com"], ids=["baidu", "bing"])
+def urls(request):
+    return request.param
+
+def test_url(urls):
+    url = urls
+    print(f"visit - > http://{url}")
+```
+
+在这个例子中，`@pytest.fixture()`使用`params`设置两个参数，`request.param`可以将参数返回给用例。`test_url()`测试函数会被执行两次。
+
+
+### 强大的`conftest.py`
+
+`conftest.py` 是 `pytest` 框架中一个特殊的配置文件，用于定义共享的`fixtures`、`hooks`、和`插件`，使测试代码更加简洁和可维护。它在测试目录中被自动发现和加载，提供了以下功能：
+
+1. **Fixtures**: 可以在 `conftest.py` 中定义全局或跨文件共享的 fixtures。fixtures 是 `pytest` 提供的一种用于准备测试环境的机制。
+   
+2. **Hooks**: 允许在测试的不同阶段（例如，测试运行前、测试运行后等）执行特定的代码。可以在 `conftest.py` 中定义自定义 hooks。
+
+3. **Plugins**: 可以在 `conftest.py` 中加载或配置 `pytest` 插件。
+
+👉 [查看示例](./demo/base_used/conftest/)
+
+#### 配置 fixture
+
+在 conftest.py 中定义 fixtures，然后可以在测试文件中使用它们：
+
+```py
+import pytest
+
+
+@pytest.fixture
+def function_scope_fixture():
+    """
+    function fixture
+    """
+    print("\n开始登台")
+    yield "function scope fixture"
+    print("\n谢幕退出")
+
+```
+
+使用配置的fixture。
+
+```py
+"""
+说明：function_scope_fixture 只是确每个函数只被执行一次
+"""
+
+
+def test_function_monkey(function_scope_fixture):
+    print("monkey dance...")
+    assert function_scope_fixture == "function scope fixture"
+
+
+def test_function_lion(function_scope_fixture):
+    print("lion Drilling ring ...")
+    assert function_scope_fixture == "function scope fixture"
+```
+
+
+#### 定义 Hooks
+
+在 conftest.py 中定义 hooks，以便在测试的不同阶段执行特定的代码：
+
+```py
+def pytest_runtest_setup(item):
+    """
+    在每个测试用例运行之前调用。
+    :param item:
+    :return
+    """
+    print(f"Setting up {item.name}")
+
+
+def pytest_runtest_call(item):
+    """
+    在每个测试用例调用时执行。
+    :param item:
+    :return:
+    """
+    print(f"Calling test {item.name}")
+
+
+def pytest_runtest_teardown(item):
+    """
+    在每个测试用例执行后调用。
+    :param item:
+    :return:
+    """
+    print(f"Tearing down {item.name}")
+```
+
+使用配置的钩子函数：
+
+```py
+# test_example.py
+def test_one():
+    print("running test one")
+    assert True
+
+
+def test_two():
+    print("running test two")
+    assert True
+```
+
+#### 配置 Plugins
+
+在 conftest.py 中配置和加载 pytest 插件：
+
+```py
+def pytest_addoption(parser):
+    """
+    添加命令行参数
+    :param parser:
+    :return:
+    """
+    parser.addoption("--name", action="store", default="None", help="say hello")
+```
+
+使用配置的插件参数。
+
+```py
+# test_hello.py
+def test_hello_name(pytestconfig):
+    name = pytestconfig.getoption("name")
+    assert name != "None"
+    print(f"hello {name}")
+```
