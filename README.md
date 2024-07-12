@@ -1,5 +1,8 @@
 # Learn-pytest-class
 
+
+📺[B站视频课程](https://space.bilibili.com/524416851/channel/collectiondetail?sid=3348861)，正在同步更新中~~！
+
 ## 前言
 
 我们在学习自动化测试的时候，核心就是学习三个技术：
@@ -135,7 +138,7 @@ collected 3 items
 test_sample.py F.F                                                    [100%]
 
 ================================= FAILURES ==========================================
-__________________________-______ test_answer _______________________________________
+_________________________________ test_answer _______________________________________
 
     def test_answer():
         """测试函数"""
@@ -1247,4 +1250,41 @@ def test_hello_name(pytestconfig):
     name = pytestconfig.getoption("name")
     assert name != "None"
     print(f"hello {name}")
+```
+
+
+### mark 标记
+
+通过使用`pytest.mark` 帮助你可以轻松地在测试函数上设置元数据。你可以在API参考中找到内置标记的完整列表。或者，可以使用CLI-`pytest --markers` 列出所有标记，包括内置标记和自定义标记。
+
+```shell
+$ pytest --markers
+```
+
+pytest 内置的一些标记:
+
+• `usefixtures` - 在测试函数或类上使用fixture。
+• `filterwarnings` - 过滤测试函数的某些警告.
+• `skip` - 总是跳过测试函数
+• `skipif` - 如果满足某些条件，则跳过测试函数
+• `xfail` - 如果满足某个条件，则产生“预期失败”结果。
+• `parametrize` - 对同一个测试函数执行多次调用。
+
+pytest 自定义标记：
+
+创建自定义标记或将标记应用于整个测试类或模块非常容易。这些标记可以被插件使用，也通常用于使用`-m` 选项在命令行上选择测试。
+
+请参阅使用自定义标记的示例，这些示例也可作为文档
+
+> 注:标记只能用于测试，对fixture没有影响。
+
+
+#### usefixtures
+
+有时测试函数不直接需要访问fixture对象。例如，测试可能需要使用将空目录作为当前工作目录，否则不关心具体目录。下面是方法您可以使用标准的`tempfile`和`pytest fixture`来实现它。
+
+我们将夹具的创建分为`conftest.py`文件:
+
+```py
+
 ```
