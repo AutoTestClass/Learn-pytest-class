@@ -191,7 +191,6 @@ $ pytest --no-header --no-summary  # 多个参数一起用
 - `--no-summary`：禁用总结信息，不再显示具体的报错。
 
 
-
 #### main方法
 
 我们需要创建一个Python文件，使用`pytest.main()`方法执行用例。
@@ -305,7 +304,7 @@ $ pytest sample\test_sample.py::TestClass::test_one  sample\test_sample.py::Test
 
 ```txt
 sample/test_sample.py::TestClass::test_one
-sample/test_sample.py::TestClass::test_two
+sample/test_sample.py::test_answer
 ```
 
 通过`pytest @file_name.txt`运行测试。
@@ -491,7 +490,6 @@ test_unittest.py::MyTest::test_case PASSED                                      
 
 ========================================= 1 passed in 0.01s =========================================
 ```
-
 
 ### 测试断言 - assert
 
@@ -1283,8 +1281,120 @@ pytest 自定义标记：
 
 有时测试函数不直接需要访问fixture对象。例如，测试可能需要使用将空目录作为当前工作目录，否则不关心具体目录。下面是方法您可以使用标准的`tempfile`和`pytest fixture`来实现它。
 
-我们将夹具的创建分为`conftest.py`文件:
+创建分为`conftest.py`文件:
 
 ```py
+import os
+import tempfile
+import pytest
 
+
+@pytest.fixture
+def cleandir():
+    with tempfile.TemporaryDirectory() as newpath:
+        old_cwd = os.getcwd()
+        os.chdir(newpath)
+        yield
+        os.chdir(old_cwd)
 ```
+
+代码说明:
+
+`cleandir` fixture函数用于创建一个临时目录作为当前目录使用。当用例执行完，再改回当前目录。
+
+然后，创建测试用例 `test_setenv.py` 文件。
+
+```py
+import os
+import pytest
+
+
+@pytest.mark.usefixtures("cleandir")
+class TestDirectoryInit:
+
+    def test_cwd_starts_empty(self):
+        assert os.listdir(os.getcwd()) == []
+        print("current dir", os.listdir(os.getcwd()))
+        with open("myfile.txt", "w", encoding="utf-8") as f:
+            f.write("hello")
+
+    def test_cwd_again_starts_empty(self):
+        assert os.listdir(os.getcwd()) == []
+```
+
+代码说明:
+
+`@pytest.mark.usefixtures("cleandir")` 将`cleandir` fixture函数应用于测试类。这样，在测试类中的每个测试函数都会执行`cleandir` fixture函数。
+
+`test_cwd_starts_empty` 测试函数将创建一个临时目录作为当前目录，然后创建一个文件。
+
+`test_cwd_again_starts_empty` 测试函数将再次创建一个临时目录作为当前目录，但此时目录为空，因为`cleandir` fixture函数在每个测试函数执行后都会执行。
+
+#### filterwarnings
+
+可以使用 `@pytest.mark.filterwarnings` 向特定的测试项添加警告过滤器，更好地控制应该在测试、类甚至模块级别捕获哪些警告:
+
+```py
+import pytest
+import warnings
+
+
+def api_v1():
+    warnings.warn(UserWarning("api v1, should use functions from v2"))
+    return 1
+
+
+@pytest.mark.filterwarnings("ignore:api v1")
+def test_one():
+    assert api_v1() == 1
+```
+
+代码说明：
+
+这个其实很好理解，正常情况下调用 `api_v1()` 函数会报一个警告，但是用 `@pytest.mark.filterwarnings("ignore:api v1")` 忽略警告。
+
+
+#### skip
+
+你可以对无法在某些平台上运行或预计会失败的函数进行mark测试，以便pytest可以相应地处理它们，呈现测试会话的摘要，同时保持测试套件的 "绿色"。
+
+1. `@pytest.mark.skip`: 跳过测试函数。
+2. `@pytest.mark.skipif`: 如果满足某些条件，则跳过测试函数。
+3. `@pytest.mark.xfail`: 如果满足某个条件，则产生“预期失败”结果。
+
+
+```py
+import sys
+import pytest
+
+
+@pytest.mark.skip(reason="no way of currently testing this")
+def test_the_unknown():
+    assert 0
+
+
+@pytest.mark.skip(reason="no way of currently testing this")
+def test_the_unknown():
+    assert 1 == 2
+
+
+@pytest.mark.skipif(sys.version_info > (3, 10), reason="requires python3.10 or higher→")
+def test_skip_if_function():
+    assert 1 == 2
+
+
+def valid_config():
+    return False
+
+
+def test_function():
+    if not valid_config():
+        pytest.skip("unsupported configuration")
+    print("exe test function")
+
+
+@pytest.mark.xfail
+def test_fail():
+    assert 1 == 1
+```
+
