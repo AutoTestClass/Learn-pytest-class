@@ -18,14 +18,20 @@ class Counter:
 
 @pytest.fixture
 def counter():
+    # setup 部分
     c = Counter()
+    print("setup value-->", c.value)
+
     yield c
+
+    # 当 counter() 不被调用之后执行
     c.value = 0  # 在测试完成后重置计数器
-    print("end c.value-->", c.value)
+    print("teardown c.value-->", c.value)
 
 
 # 使用 counter fixture 的测试函数
 def test_counter_increment(counter):
+    print("exe test_counter_increment")
     assert counter.get_value() == 0
     counter.increment()
     assert counter.get_value() == 1

@@ -4,6 +4,7 @@ def multiply(a, b):
 
 
 class TestMultiply:
+
     # =====fixtures========
     @classmethod
     def setup_class(cls):

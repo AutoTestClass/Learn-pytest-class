@@ -19,17 +19,20 @@ class Counter:
 @pytest.fixture
 def counter(request):
     c = Counter()
+    print("setup c.value-->", c.value)
 
     def reset_counter():
-        c.value = 0
+        c.value = 0  # 重置vlaue值 = 0
+        print("teardown c.value-->", c.value)
 
     request.addfinalizer(reset_counter)  # 注册清理函数
-    print("end c.value-->", c.value)
+
     return c
 
 
 # 使用 counter fixture 的测试函数
 def test_counter_increment(counter):
+    print("exe test_counter_increment")
     assert counter.get_value() == 0
     counter.increment()
     assert counter.get_value() == 1

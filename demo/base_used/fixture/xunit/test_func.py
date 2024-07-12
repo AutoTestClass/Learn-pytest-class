@@ -29,3 +29,10 @@ def test_multiply_3_4():
 def test_multiply_a_3():
     print('test_strings_a_3')
     assert multiply('a', 3) == 'aaa'
+
+
+class TestMultiply:
+
+    def test_is_true(self):
+        print("test_is_true")
+        assert True

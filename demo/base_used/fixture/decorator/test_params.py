@@ -15,11 +15,17 @@ def idfn(fixture_value):
     """自定义 ids"""
     if fixture_value == "tomato":
         return "vegetable"
-    else:
+    elif fixture_value == "watermelon":
         return "fruits"
+    else:
+        return "unknown"
 
 
-@pytest.fixture(params=["watermelon", "tomato"], ids=idfn)
+def params_list():
+    return ["watermelon", "tomato", "apple", "potato"]
+
+
+@pytest.fixture(params=params_list(), ids=idfn)
 def garden_stuff(request):
     return request.param
 

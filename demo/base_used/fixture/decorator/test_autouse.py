@@ -13,6 +13,9 @@ def order(first_entry):
 
 @pytest.fixture(autouse=True)
 def append_first(order, first_entry):
+    """
+    这个 fixture 没有被其他用例&fixture调用！！ 自动被执行
+    """
     return order.append(first_entry)
 
 
