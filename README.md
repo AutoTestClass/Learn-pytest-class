@@ -1398,3 +1398,198 @@ def test_fail():
     assert 1 == 1
 ```
 
+
+#### parametrize
+
+`@pytest.mark.parametrize` 可以将同一个测试函数执行多次，并传递不同的参数。
+
+* `pytest.fixeture()` 允许对fixture函数进行参数化。--**前面已经介绍使用**
+* `@pytest.mark.parameterize` 允许在测试函数或类中定义多组参数和fixture。
+* `pytest_generate_tests` 允许定义自定义参数化方案或扩展。--**略**
+
+__参数化函数__
+
+最基本的用法，当某个用例运行步骤相同，测试数据不同时，可以使用参数化。
+
+* 示例代码
+
+```py
+import pytest
+
+
+@pytest.mark.parametrize(", expected", [("3+5", 8), ("2+4", 6), ("6*9", 42)])
+def test_eval(test_input, expected):
+    assert eval(test_input) == expected
+```
+
+* 运行结果
+
+```py
+> pytest -vs test_function.py
+
+======================================= test session starts =========================================
+test_function.py::test_eval[3+5-8] PASSED
+test_function.py::test_eval[2+4-6] PASSED
+test_function.py::test_eval[6*9-42] FAILED
+
+========================================= FAILURES ==================================================
+_______________________________________ test_eval[6*9-42] ___________________________________________
+
+test_input = '6*9', expected = 42
+
+    @pytest.mark.parametrize("test_input, expected", [("3+5", 8), ("2+4", 6), ("6*9", 42)])
+    def test_eval(test_input, expected):
+>       assert eval(test_input) == expected
+E       AssertionError: assert 54 == 42
+E        +  where 54 = eval('6*9')
+
+test_function.py:6: AssertionError
+================================= short test summary info ============================================
+FAILED test_function.py::test_eval[6*9-42] - AssertionError: assert 54 == 42
+=================================== 1 failed, 2 passed in 0.07s ======================================
+```
+本例中特意设置一条测试失败的数据，进一步说明参数化之后的测试用例，测试数据之间是相互独立的。
+
+__参数化类__
+
+
+最基本的用法，当某个测试类下面的用例使用的是相同的测试数据，可以使用参数化测试类。
+
+* 示例代码
+
+```py
+import pytest
+
+
+@pytest.mark.parametrize("n,expected", [(1, 2), (3, 4)])
+class TestClass:
+
+    def test_simple_case(self, n, expected):
+        assert n + 1 == expected
+
+    def test_weird_simple_case(self, n, expected):
+        assert (n * 1) + 1 == expected
+```
+
+* 运行结果
+
+```py
+> pytest -vs .\test_class.py
+======================================= test session starts =========================================
+test_class.py::TestClass::test_simple_case[1-2] PASSED
+test_class.py::TestClass::test_simple_case[3-4] PASSED
+test_class.py::TestClass::test_weird_simple_case[1-2] PASSED
+test_class.py::TestClass::test_weird_simple_case[3-4] PASSED
+
+===================================== 4 passed in 0.01s ==============================================
+```
+本例中特意设置一条测试失败的数据，进一步说明参数化之后的测试用例，测试数据之间是相互独立的。
+
+__参数化模块__
+
+
+此外，pytest还支持全局的设置参数化，当然，这个全局仅限于模块，即单个.py文件。
+
+* 示例代码
+
+```py
+import pytest
+
+pytestmark = pytest.mark.parametrize("n,expected", [(1, 2), (3, 4)])
+
+
+class TestClass:
+    def test_simple_case(self, n, expected):
+        assert n + 1 == expected
+
+    def test_weird_simple_case(self, n, expected):
+        assert (n * 1) + 1 == expected
+
+
+def test_func_case(n, expected):
+    assert n + 1 == expected
+```
+
+* 运行结果
+
+```py
+>  pytest -vs .\test_global.py
+
+======================================= test session starts =========================================
+
+test_global.py::TestClass::test_simple_case[1-2] PASSED
+test_global.py::TestClass::test_simple_case[3-4] PASSED
+test_global.py::TestClass::test_weird_simple_case[1-2] PASSED
+test_global.py::TestClass::test_weird_simple_case[3-4] PASSED
+test_global.py::test_func_case[1-2] PASSED
+test_global.py::test_func_case[3-4] PASSED
+
+========================================= 6 passed in 0.02s =========================================
+```
+本例中特意设置一条测试失败的数据，进一步说明参数化之后的测试用例，测试数据之间是相互独立的。
+
+__参数化使用标记__
+
+也可以在参数化中标记单独的测试实例，例如使用内置的`mark.xfail`。
+
+* 示例代码
+
+```py
+import pytest
+
+
+@pytest.mark.parametrize(
+    "test_input,expected ",
+    [
+        ("3+5 ", 8), ("2+4 ", 6),
+        pytest.param(" 6*9 ", 42, marks=pytest.mark.xfail)
+    ],
+)
+def test_eval(test_input, expected):
+    assert eval(test_input) == expected
+```
+
+* 运行结果
+
+```py
+>  pytest -vs .\test_mark.py
+======================================= test session starts =========================================
+
+test_mark.py::test_eval[3+5 -8] PASSED
+test_mark.py::test_eval[2+4 -6] PASSED
+test_mark.py::test_eval[ 6*9 -42] XFAIL
+
+=================================== 2 passed, 1 xfailed in 0.07s ====================================
+```
+本例中特意设置一条测试失败的数据，进一步说明参数化之后的测试用例，测试数据之间是相互独立的。
+
+
+__参数化叠加__
+
+pytest多个参数化叠加使用，产生的效果就是笛卡尔积。
+
+* 示例代码
+
+```py
+import pytest
+
+
+@pytest.mark.parametrize("x", [0, 1])
+@pytest.mark.parametrize("y ", [2, 3])
+def test_foo(x, y):
+    pass
+```
+
+* 运行结果
+
+```py
+> pytest -vs test_more.py
+======================================= test session starts =========================================
+
+test_more.py::test_foo[2-0] PASSED
+test_more.py::test_foo[2-1] PASSED
+test_more.py::test_foo[3-0] PASSED
+test_more.py::test_foo[3-1] PASSED
+
+======================================= 4 passed in 0.01s ============================================
+```
