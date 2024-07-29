@@ -1424,7 +1424,7 @@ def test_eval(test_input, expected):
 
 * 运行结果
 
-```py
+```shell
 > pytest -vs test_function.py
 
 ======================================= test session starts =========================================
@@ -1473,8 +1473,8 @@ class TestClass:
 
 * 运行结果
 
-```py
-> pytest -vs .\test_class.py
+```shell
+> pytest -vs test_class.py
 ======================================= test session starts =========================================
 test_class.py::TestClass::test_simple_case[1-2] PASSED
 test_class.py::TestClass::test_simple_case[3-4] PASSED
@@ -1512,8 +1512,8 @@ def test_func_case(n, expected):
 
 * 运行结果
 
-```py
->  pytest -vs .\test_global.py
+```shell
+>  pytest -vs test_global.py
 
 ======================================= test session starts =========================================
 
@@ -1551,7 +1551,7 @@ def test_eval(test_input, expected):
 
 * 运行结果
 
-```py
+```shell
 >  pytest -vs .\test_mark.py
 ======================================= test session starts =========================================
 
@@ -1582,7 +1582,7 @@ def test_foo(x, y):
 
 * 运行结果
 
-```py
+```shell
 > pytest -vs test_more.py
 ======================================= test session starts =========================================
 
@@ -1592,4 +1592,123 @@ test_more.py::test_foo[3-0] PASSED
 test_more.py::test_foo[3-1] PASSED
 
 ======================================= 4 passed in 0.01s ============================================
+```
+
+
+### 重新运行失败用例
+
+pytest提供了两个命令行选项来重新运行上次调用的失败:
+
+* `--lf`、`--last-failed` — 只重新运行失败。
+* `--ff`、`--failed-first` — 先运行失败测试，然后再运行其余测试。
+
+对于清理(通常不需要)，`--cache-clear` 选项允许在测试运行之前删除所有跨会话缓存内容。
+
+* 示例代码
+
+```py
+import pytest
+
+
+@pytest.mark.parametrize("i ", range(50))
+def test_num(i):
+    if i in (17, 25):
+        pytest.fail("bad  luck ")
+```
+
+* 运行结果
+
+```shell
+> pytest  -qs
+
+.................F.......F........................
+========================================== FAILURES =================================================
+_________________________________________ test_num[17] ______________________________________________
+
+i = 17
+
+    @pytest.mark.parametrize("i ", range(50))
+    def test_num(i):
+        if i in (17, 25):
+>           pytest.fail("bad  luck ")
+E           Failed: bad  luck
+
+test_50.py:7: Failed
+________________________________________ test_num[25] ________________________________________________
+
+i = 25
+
+    @pytest.mark.parametrize("i ", range(50))
+    def test_num(i):
+        if i in (17, 25):
+>           pytest.fail("bad  luck ")
+E           Failed: bad  luck
+
+test_50.py:7: Failed
+================================ short test summary info =============================================
+FAILED test_50.py::test_num[17] - Failed: bad  luck
+FAILED test_50.py::test_num[25] - Failed: bad  luck
+2 failed, 48 passed in 0.11s
+```
+
+在运行的当前目录下会产生一个`.pytest_cache`文件夹，里面有缓存文件。
+
+`.pytest_cache/v/cache/lastfailed`文件记录了上次运行失败的测试用例。
+
+```json
+{
+  "test_50.py::test_num[17]": true,
+  "test_50.py::test_num[25]": true
+}
+```
+
+**再次运行**
+
+* 使用`--lf`参数只运行失败的用例。
+
+```shell
+> pytest --lf -qs
+FF
+========================================== FAILURES =================================================
+...
+2 failed in 0.07s
+```
+
+* 使用`--ff`参数优先运行失败的用例。
+
+```shell
+> pytest --ff -qs
+FF................................................
+========================================== FAILURES =================================================
+...
+2 failed, 48 passed in 0.10s
+```
+
+* 使用 `--cache-clear` 参数每次运行前清理缓存。
+
+```shell
+> pytest --cache-clear
+```
+
+* 使用 `--cache-show` 参数检查用例运行的缓存。
+
+```shell
+> pytest  --cache-show
+
+cachedir: D:\github\AutoTestClass\Learn-pytest-class\demo\base_used\rerun\.pytest_cache
+-------------------------------------- cache values for '*' ------------------------------------
+cache\lastfailed contains:
+  {'test_50.py::test_num[17]': True, 'test_50.py::test_num[25]': True}
+cache\nodeids contains:
+  ['test_50.py::test_num[0]',
+   'test_50.py::test_num[10]',
+   'test_50.py::test_num[11]',
+   'test_50.py::test_num[12]',
+    ...
+   'test_50.py::test_num[8]',
+   'test_50.py::test_num[9]']
+cache\stepwise contains:
+  []
+
+no tests ran in 0.01s
 ```
