@@ -31,7 +31,7 @@ def module_scope_fixture():
     print("\n动物表演结束")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def session_scope_fixture():
     """
     session fixture

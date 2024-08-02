@@ -3,16 +3,16 @@
 """
 
 
-def test_one():
-    assert True
+def test_one(module_scope_fixture):
+    assert module_scope_fixture == "module scope fixture"
 
 
 def test_two(module_scope_fixture):
     assert module_scope_fixture == "module scope fixture"
 
 
-def test_three(module_scope_fixture):
-    assert module_scope_fixture == "module scope fixture"
+def test_three():
+    assert True
 
 
 def test_four():

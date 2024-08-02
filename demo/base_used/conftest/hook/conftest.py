@@ -1,4 +1,28 @@
-import pytest
+def pytest_runtest_setup(item):  # 第一步
+    """
+    在每个测试用例运行之前调用。
+    :param item:
+    :return
+    """
+    print(f"Setting up {item.name}")
+
+
+def pytest_runtest_teardown(item):
+    """
+    在每个测试用例执行后调用。
+    :param item:
+    :return:
+    """
+    print(f"Tearing down {item.name}")
+
+
+def pytest_runtest_call(item):  # 第二步
+    """
+    在每个测试用例调用时执行。
+    :param item:
+    :return:
+    """
+    print(f"Calling test {item.name}")
 
 
 def pytest_configure(config):
@@ -30,33 +54,6 @@ def pytest_collection_modifyitems(session, config, items):
     print("Modifying collected items")
 
 
-def pytest_runtest_setup(item):
-    """
-    在每个测试用例运行之前调用。
-    :param item:
-    :return
-    """
-    print(f"Setting up {item.name}")
-
-
-def pytest_runtest_call(item):
-    """
-    在每个测试用例调用时执行。
-    :param item:
-    :return:
-    """
-    print(f"Calling test {item.name}")
-
-
-def pytest_runtest_teardown(item):
-    """
-    在每个测试用例执行后调用。
-    :param item:
-    :return:
-    """
-    print(f"Tearing down {item.name}")
-
-
 def pytest_sessionstart(session):
     """
     在测试会话开始时调用。
@@ -74,15 +71,6 @@ def pytest_sessionfinish(session, exitstatus):
     :return:
     """
     print("Session finished")
-
-
-def pytest_addoption(parser):
-    """
-    用于向 pytest 添加命令行选项。
-    :param parser:
-    :return:
-    """
-    parser.addoption("--myoption", action="store", default="default", help="My custom option")
 
 
 def pytest_report_header(config):
