@@ -1257,7 +1257,9 @@ def test_hello_name(pytestconfig):
 
 ### mark 标记
 
-通过使用`pytest.mark`帮助你可以轻松地在测试函数上设置元数据。你可以在API参考中找到内置标记的完整列表。或者，可以使用CLI-`pytest --markers`列出所有标记，包括内置标记和自定义标记。
+通过使用`pytest.mark`
+帮助你可以轻松地在测试函数上设置元数据。你可以在API参考中找到内置标记的完整列表。或者，可以使用CLI-`pytest --markers`
+列出所有标记，包括内置标记和自定义标记。
 
 ```shell
 $ pytest --markers
@@ -1371,20 +1373,25 @@ import pytest
 def test_the_unknown():
     assert 0
 
+
 @pytest.mark.skip(reason="no way of currently testing this")
 def test_the_unknown():
     assert 1 == 2
+
 
 @pytest.mark.skipif(sys.version_info > (3, 10), reason="requires python3.10 or higher→")
 def test_skip_if_function():
     assert 1 == 2
 
+
 @pytest.mark.xfail
 def test_fail():
     assert 1 == 1
 
+
 def valid_config():
     return False
+
 
 def test_function():
     if not valid_config():
@@ -1789,10 +1796,12 @@ def test_slow():
 def test_check_login():
     assert True
 
+
 @pytest.mark.slow
 @pytest.mark.high
 def test_more_mark():
     assert True
+
 
 def test_no_mark():
     assert True
@@ -1945,3 +1954,6 @@ python_files =
 ```
 
 不管是目录或文件均支持指定多个。
+
+---
+接下来，继续学习 -> [插件使用](./plugin.md)
