@@ -331,3 +331,83 @@ def pytest_runtest_makereport(item, call):
 * 生成报告
 
 ![](./image/pytest-html-column.png)
+
+
+### allure-pytest
+
+Allure框架是一套适配器和示例，用于Allure报告，这是一个灵活、轻量级的多语言测试报告工具。
+
+allure 支持各种编程语言下面的的测试框架，包括：java、python、js、ruby和c# 等。
+
+* python项目
+
+https://github.com/allure-framework/allure-python
+
+#### 安装allure命令
+
+allure本身是一个解析测试报告的命令行工具，需要安装allure命令才能使用。
+
+您可以通过以下方式之一获取 Allure：
+
+* 安装包安装：
+
+https://github.com/allure-framework/allure2/releases
+
+* 使用 Homebrew：
+
+```shell
+$ brew install allure
+```
+
+* 使用 scoop：
+
+对于 Windows，Allure 可以通过 Scoop 命令行安装程序获取。要安装 Allure，请下载并安装 Scoop，然后在 Powershell 中执行：
+
+```shell
+> scoop install allure
+```
+
+#### 使用allure报告
+
+使用allure的核心是让pytest生成allure能解析的数据格式。
+
+* 安装allure-pytest库
+
+```shell
+$ pip install allure-pytest
+```
+
+* 运行测试，并生成allure数据
+
+```shell
+$ pytest --alluredir=%allure_result_folder% 
+```
+
+生成目录：
+
+```
+├───test_sample.py
+└───%allure_result_folder%
+    |───xxx.json
+    |───yyy.json
+    └───zzz.json
+```
+
+`%allure_result_folder%` 这些目录下面的JSON数据记录了用例的执行信息。
+
+* allure 服务
+
+```shell
+$ allure serve %allure_result_folder%
+
+Generating report to temp directory...
+Report successfully generated to C:\Users\fnngj\AppData\Local\Temp\7976221059831703393\allure-report
+Starting web server...
+2024-08-03 17:36:08.208:INFO::main: Logging initialized @3220ms to org.eclipse.jetty.util.log.StdErrLog
+Server started at <http://192.168.43.203:8976/>. Press <Ctrl+C> to exit
+```
+
+* 生成报告
+
+![](./image/allure-report.png)
+
