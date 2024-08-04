@@ -411,3 +411,48 @@ Server started at <http://192.168.43.203:8976/>. Press <Ctrl+C> to exit
 
 ![](./image/allure-report.png)
 
+
+### pytest-base-url
+
+pytest-base-url是一个pytest插件，它允许你为测试用例设置一个默认的URL。
+
+当我们需要重复使用一个基础URL，`pytest-base-url` 提供了一个 `base_url` 的（fixture），该fixture返回指定的基础URL。
+
+使用场景：
+
+- [x] web 测试
+- [x] api 测试
+
+* pip安装`pytest-base-url`。
+
+```shell
+> pip install pytest-base-url
+```
+
+* 使用示例
+
+```py
+import urllib2
+
+def test_example(base_url):
+    assert 200 == urllib2.urlopen(base_url).getcode()
+```
+
+**使用命令行**
+
+你可以在命令行中指定基础URL：
+
+```shell
+> pytest --base-url=https://httpbin.org/get
+```
+
+**使用配置文件**
+
+你也可以在配置文件中指定基础URL。
+
+* `pytest.ini`配置
+
+```shell
+[pytest]  
+base_url = https://httpbin.org/get
+```
