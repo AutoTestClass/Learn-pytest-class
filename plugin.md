@@ -8,12 +8,11 @@ Pytest Plugin List: https://docs.pytest.org/en/stable/reference/plugin_list.html
 
 这么多插件肯定是良莠不齐的，也并不是所有功能都会用得到的，我们这里挑选一些最为常用的介绍其使用。
 
-
 ### pytest-html
 
 pytest-HTML是pytest的一个插件，它为测试结果生成HTML报告。
 
-####  安装与使用
+#### 安装与使用
 
 **安装：**
 
@@ -52,14 +51,13 @@ def test_skip():
 
 * 运行结果
 
-```py
+```shell
 > pytest --html=report.html
 ```
 
 * 查看报告
 
 ![](./image/pytest-html.png)
-
 
 #### HTML报告支持log
 
@@ -99,10 +97,9 @@ def test_example():
     logging.warning("这是一条告警信息")
 ```
 
-
 * 运行结果
 
-```py
+```shell
 > pytest --html=report.html test_log.py
 ```
 
@@ -115,6 +112,7 @@ def test_example():
 为了实时生成测试结果报告，即每个测试完成后立即生成对应的报告部分，而不是等待整个测试运行完全结束后才生成报告。
 
 * pytest.ini 配置
+
 ```ini
 [pytest]  
 generate_report_on_test = True
@@ -129,8 +127,10 @@ from time import sleep
 def test_one():
     sleep(3)
 
+
 def test_two():
     sleep(2)
+
 
 def test_three():
     sleep(4)
@@ -138,8 +138,8 @@ def test_three():
 
 下面是一组运行缓慢的用例，当第一条用例运行完成后会生成测试报告。之后运行的每条用例的结果会`追加`到这个报告中。
 
-> 虽然实时生成报告可以带来更好的用户体验，但请注意，这可能会稍微影响测试的整体执行时间，因为每次测试完成后都需要更新HTML文件。此外，如果测试运行时间非常长，或者测试数量非常多，生成的HTML文件可能会变得相当大，这可能会影响其加载速度和可读性。因此，在使用此功能时，请根据你的具体需求和环境进行权衡。
-
+>
+虽然实时生成报告可以带来更好的用户体验，但请注意，这可能会稍微影响测试的整体执行时间，因为每次测试完成后都需要更新HTML文件。此外，如果测试运行时间非常长，或者测试数量非常多，生成的HTML文件可能会变得相当大，这可能会影响其加载速度和可读性。因此，在使用此功能时，请根据你的具体需求和环境进行权衡。
 
 #### 自定义报告标题
 
@@ -173,7 +173,6 @@ def pytest_html_report_title(report):
 
 作为替代方案，我们也可以创建一个自包含报告，这在分享结果时可能更为方便。
 
-
 * 运行测试
 
 ```shell
@@ -204,6 +203,7 @@ pip install selenium
 ```py
 import pytest
 from selenium.webdriver import Chrome
+
 
 @pytest.fixture(scope="session", autouse=True)
 def browser():
@@ -245,8 +245,8 @@ def pytest_runtest_makereport(item, brw):
 代码说明:
 
 `browser` 定义selenium 浏览器驱动。
-`pytest_runtest_makereport` 钩子函数可以在用例运行结束的时候完成一些操作。核心就是两步：1. 通过selenium 驱动截取到图片，2. 如何将图片插入到 HTML 报告中。
-
+`pytest_runtest_makereport` 钩子函数可以在用例运行结束的时候完成一些操作。核心就是两步：1. 通过selenium 驱动截取到图片，2.
+如何将图片插入到 HTML 报告中。
 
 * 测试示例
 
@@ -293,10 +293,10 @@ FAILED test_selenium.py::test_bing - AssertionError: assert '必应' == 'bing'
 
 ![](./image/pytest-html-sreen.png)
 
-
 #### 修改结果表
 
-你可以通过为报告的标题和行实现自定义钩子来修改报告的列。以下示例 `conftest.py` 添加了一个描述列，包含测试函数的文档字符串，添加了一个可排序的时间列，并移除了链接列：
+你可以通过为报告的标题和行实现自定义钩子来修改报告的列。以下示例 `conftest.py`
+添加了一个描述列，包含测试函数的文档字符串，添加了一个可排序的时间列，并移除了链接列：
 
 * conftest.py 配置
 
@@ -331,7 +331,6 @@ def pytest_runtest_makereport(item, call):
 * 生成报告
 
 ![](./image/pytest-html-column.png)
-
 
 ### allure-pytest
 
@@ -411,7 +410,6 @@ Server started at <http://192.168.43.203:8976/>. Press <Ctrl+C> to exit
 
 ![](./image/allure-report.png)
 
-
 ### pytest-base-url
 
 pytest-base-url是一个pytest插件，它允许你为测试用例设置一个默认的URL。
@@ -432,10 +430,11 @@ pytest-base-url是一个pytest插件，它允许你为测试用例设置一个�
 * 使用示例
 
 ```py
-import urllib2
+import urllib
+
 
 def test_example(base_url):
-    assert 200 == urllib2.urlopen(base_url).getcode()
+    assert 200 == urllib.urlopen(base_url).getcode()
 ```
 
 **使用命令行**
@@ -456,3 +455,235 @@ def test_example(base_url):
 [pytest]  
 base_url = https://httpbin.org/get
 ```
+
+### pytest-rerunfailures
+
+pytest-rerunfailures 是一个针对 pytest 的插件，用于重新运行测试，以消除间歇性失败。
+
+* pip安装`pytest-rerunfailures`。
+
+```shell
+> pip install pytest-rerunfailures
+```
+
+#### 重跑所有失败用例
+
+要重新运行所有测试失败。支持的类型：
+
+- [x] 测试用例错误(代码错误)。
+- [x] 测试用例失败(断言失败)。
+- [x] fixture失败&错误。
+- [x] setup_class失败&错误。
+
+* 测试示例
+
+```py
+import pytest
+
+
+@pytest.fixture
+def cleanenv():
+    a
+
+
+def test_error():
+    with open("abc.txt") as f:
+        pass
+
+
+def test_fail():
+    assert 2 + 2 == 3
+
+
+def test_fixture_error(cleanenv):
+    pass
+
+
+class TestClass:
+
+    @classmethod
+    def setup_class(cls):
+        b
+
+    def test_case(self):
+        assert True
+```
+
+使用 `--reruns` 命令行选项，并指定您希望测试运行的最大次数：
+
+```shell
+> pytest -vs --reruns 2  test_sample.py
+
+....
+
+test_sample.py::test_error RERUN
+test_sample.py::test_error RERUN
+test_sample.py::test_error FAILED
+test_sample.py::test_fail RERUN
+test_sample.py::test_fail RERUN
+test_sample.py::test_fail FAILED
+test_sample.py::test_fixture_error RERUN
+test_sample.py::test_fixture_error RERUN
+test_sample.py::test_fixture_error ERROR
+test_sample.py::TestClass::test_case RERUN
+test_sample.py::TestClass::test_case RERUN
+test_sample.py::TestClass::test_case ERROR
+...
+
+```
+
+要在重新运行之间添加延迟时间，请使用 `--reruns-delay` 命令行选项，并指定您希望在下次测试重新运行之前等待的秒数：
+
+```shell
+> pytest --reruns 5 --reruns-delay 1 test_sample.py
+```
+
+#### 重新运行 - 排除某中类型的错误&失败
+
+重新运行，如果想`排除`或`执行` 某种类型的错误，可以通过下面方式：
+
+- [x]  `--rerun-except` 排除某中类型的错误。
+- [x]  `--only-rerun` 只重新运行某中类型的错误。
+
+* 测试示例
+
+```py
+def test_pass():
+    """这个测试会成功"""
+    assert True
+
+
+def test_always_fail():
+    """这个测试总是失败，并且抛出的是TypeError，应该被重新运行"""
+    raise TypeError("This is a TypeError")
+
+
+def test_assert_error():
+    """这个测试失败时抛出AssertionError，根据配置不应该被重新运行"""
+    assert False, "This is an AssertionError"
+
+
+def test_os_error():
+    """这个测试失败时抛出OSError，根据配置也不应该被重新运行"""
+    raise OSError("This is an OSError")
+
+
+def test_runtime_error():
+    """这个测试失败时抛出RuntimeError，应该被重新运行"""
+    raise RuntimeError("This is a RuntimeError")
+```
+
+例如，以下命令将排除 `AssertionError` 错误的用例的重跑：
+
+```sh
+$ pytest --reruns 2 --rerun-except AssertionError
+```
+
+例如，以下命令将只重新运行 `AssertionError` 错误的用例：
+
+```sh
+$ pytest --reruns 2 --only-rerun AssertionError
+```
+
+多次传递标志将累积参数，所以以下命令将只重新运行与 `AssertionError` 或 `OSError` 不匹配的错误：
+
+```sh
+$ pytest --reruns 2 --rerun-except AssertionError --rerun-except OSError
+```
+
+注意：当 `AssertionError` 来自使用 `assert` 关键字时，使用 `--rerun-except assert` 代替：
+
+```sh
+$ pytest --reruns 2 --rerun-except assert
+```
+
+#### 重新运行个别失败
+
+要标记个别测试为不稳定的，并在它们失败时自动重新运行，添加 `flaky` 标记，并指定希望测试运行的最大次数：
+
+```python
+@pytest.mark.flaky(reruns=5)
+def test_example():
+    import random
+    assert random.choice([True, False])
+```
+
+注意，当 teardown 失败时，会为该案例生成两个报告，一个用于测试用例，另一个用于 teardown 错误。
+
+也可以在标记中指定重新运行的延迟时间：
+
+```python
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
+def test_example():
+    import random
+    assert random.choice([True, False])
+```
+
+您也可以在重新运行标记中指定一个可选的 `condition`：
+
+```python
+@pytest.mark.flaky(reruns=5, condition=sys.platform.startswith("win32"))
+def test_example():
+    import random
+    assert random.choice([True, False])
+```
+
+异常过滤可以通过为 `only_rerun` 和 `rerun_except` 指定正则表达式来完成。它们分别覆盖 `--only-rerun` 和 `--rerun-except`
+命令行参数。
+
+参数可以是单个字符串：
+
+```python
+import pytest
+
+
+@pytest.mark.flaky(rerun_except="AssertionError")
+def test_example():
+    raise AssertionError()
+```
+
+或字符串列表：
+
+```python
+import pytest
+
+
+@pytest.mark.flaky(only_rerun=["AssertionError", "ValueError"])
+def test_example():
+    raise AssertionError()
+```
+
+您可以像使用 `@pytest.mark.skipif(condition)` 一样使用 `@pytest.mark.flaky(condition)`，请参阅 pytest-mark-skipif。
+
+```python
+import sys
+import pytest
+
+
+@pytest.mark.flaky(reruns=2, condition="sys.platform.startswith('win32')")
+def test_example():
+    import random
+    assert random.choice([True, False])
+
+
+# 和上面的完全相同
+@pytest.mark.flaky(reruns=2, condition=sys.platform.startswith("win32"))
+def test_example():
+    import random
+    assert random.choice([True, False])
+```
+
+请注意，测试将针对任何为真值的 `condition` 重新运行。
+
+#### 从严重崩溃中恢复
+
+如果一个或多个测试导致严重崩溃（例如：segfault），这个插件通常无法重新运行测试。不过，如果安装了兼容版本的
+pytest-xdist，并且测试是在 `pytest-xdist` 中使用 `-n`
+标志运行的，这个插件就能重新运行崩溃的测试，前提是工作节点和控制器在同一个局域网内（这个假设在几乎所有情况下都是成立的，因为大多数时候工作节点和控制器是在同一台电脑上）。如果不满足这个假设，那么这个功能可能无法正常运行。
+
+#### 兼容性
+
+- 此插件**不能**与类、模块和包级 fixture 一起使用。
+- 此插件**不兼容** pytest-xdist 的 --looponfail 标志。
+- 此插件**不兼容**核心 --pdb 标志。
+- 此插件**不兼容** flaky 插件，您只能使用 `pytest-rerunfailures` 或 `flaky`，而不能同时使用两者。
