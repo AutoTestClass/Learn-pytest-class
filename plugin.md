@@ -965,3 +965,174 @@ pytest-xdist，并且测试是在 `pytest-xdist` 中使用 `-n`
 - 此插件**不兼容** pytest-xdist 的 --looponfail 标志。
 - 此插件**不兼容**核心 --pdb 标志。
 - 此插件**不兼容** flaky 插件，您只能使用 `pytest-rerunfailures` 或 `flaky`，而不能同时使用两者。
+
+### pytest-xdist
+
+pytest-xdist 插件扩展了 pytest，新增了测试执行模式，其中最常用的是将测试分配到多个 CPU 上，以加速测试执行：
+
+```shell
+pytest -n auto  
+```
+
+通过这个命令，pytest 将生成与可用 CPU 数量相等的工作进程，并随机将测试分配到这些进程中。
+
+#### 安装
+
+* pip命令安装插件：
+
+```shell
+pip install pytest-xdist
+```
+
+要使用 `psutil` 检测可用的 CPU 数量，请安装 psutil 扩展：
+
+```shell
+> pip install pytest-xdist[psutil]
+```
+
+pytest 并发运行测试常用的插件是 **pytest-xdist**。这个插件主要提供并行测试、分布式测试、循环测试等功能，可以显著加快测试速度。
+
+#### 使用 pytest-xdist 并发运行测试
+
+安装完成后，可以在运行 pytest 测试时添加 `-n` 参数来指定并发执行的进程数。例如：
+
+- `-n 4` 表示使用 4 个进程并发执行测试。
+- `-n auto` 会自动检测 CPU 的核心数并启动相应数量的进程。
+
+* 测试示例
+
+```py
+# test_sample.py
+from time import sleep
+
+
+def test_one():
+    sleep(2)
+
+
+def test_two():
+    sleep(3)
+
+
+def test_three():
+    sleep(4)
+
+```
+
+* 示例命令：
+
+```bash
+pytest -v -n 3 test_sample.py
+```
+
+或者，自动检测 CPU 核心数：
+
+```bash
+pytest -v -n auto test_sample.py
+```
+
+* 运行结果
+
+```shell
+pytest -v -n auto .\test_sample.py
+================================ test session starts ================================
+8 workers [3 items]
+scheduling tests via LoadScheduling
+
+test_sample.py::test_two
+test_sample.py::test_three
+test_sample.py::test_one
+[gw0] [ 33%] PASSED test_sample.py::test_one
+[gw1] [ 66%] PASSED test_sample.py::test_two
+[gw2] [100%] PASSED test_sample.py::test_three
+
+================================= 3 passed in 6.30s =================================
+```
+
+__并发数与用例数：__
+
+1. `并发数大于用例数`，则每个进程都会运行一个用例，多设置的进程会空闲。
+2. `并发数小于用例数`，先分配给进程每人一个用例，最早空闲出的进程继续运行后面的用例。
+
+
+#### 自动重新运行失败的用例
+
+pytest-xdist 还提供了其他有用的功能, `--looponfail` 标志：自动重新运行失败的测试。**注意：这个功能并不是失败重跑**
+
+这个功能更像是Web服务的热更新（热加载），用例一直处于运行状态，当测试用例发生改变时，pytest-xdist 会自动重新运行失败的测试用例。
+
+* 测试示例
+
+```py
+from random import randint
+
+
+def test_pass():
+    pass
+
+
+def test_fail():
+    num = randint(1, 3)
+    print(f"num:{num}")
+    assert num == 2
+```
+
+* 运行测试
+
+```shell
+> pytest -vs --looponfail -n 2 test_fail.py
+
+...
+
+======================================== FAILURES ===================================
+________________________________________ test_fail __________________________________
+[gw1] win32 -- Python 3.11.9 C:\Users\fnngj\.virtualenvs\Learn-pytest-class-k2175urw\Scripts\python.exe
+
+    def test_fail():
+        num = randint(1, 2)
+
+        print(f"num:{num}")
+
+>       assert num == 2
+E       assert 1 == 2
+
+test_fail.py:13: AssertionError
+---------------------------------- Captured stdout call -----------------------------
+num:1
+================================= short test summary info ===========================
+FAILED test_fail.py::test_fail - assert 1 == 2
+=============================== 1 failed, 1 passed in 1.15s =========================
+############################# LOOPONFAILING #########################################
+test_fail.py::test_fail
+############################# waiting for changes ###################################
+### Watching:   D:\github\AutoTestClass\Learn-pytest-class\demo\plugin_used\pytest-xdist
+
+```
+
+#### 用例顺序和分组
+
+pytest--xdist默认是无序执行的，可以通过`-dist`参数来控制执行顺序。
+
+* `-dist=loadscope`
+* `-dist=loadfile`
+* `-dist=loadgroup`
+
+**`loadscope`**:
+   - `loadscope` 是默认的分发策略。
+   - 它尝试将属于同一作用域（scope）的测试用例（如类级别的fixture）发送到同一个进程中去执行。这有助于确保依赖于相同作用域fixture的测试用例能够共享fixture的实例，从而减少重复设置和清理的开销。
+   - 在实践中，这意味着如果多个测试用例属于同一个测试类，并且该类使用了类级别的fixture，那么这些测试用例可能会被发送到同一个进程中去执行。
+
+**`loadfile`**:
+   - 使用 `loadfile` 策略时，pytest 会尽量将同一个文件中的测试用例发送到同一个进程中去执行。
+   - 这种策略适用于那些测试用例之间高度独立，但文件内部可能存在一些共享资源或状态的情况。通过保持文件内的测试用例在同一个进程中执行，可以减少跨进程通信的开销，并可能提高测试执行的效率。
+   - 然而，需要注意的是，如果文件内的测试用例之间存在复杂的依赖关系，或者需要共享某些资源（这些资源不是通过fixture管理的），那么使用 `loadfile` 策略可能会导致问题。
+
+**`loadgroup`**:
+   - `loadgroup` 策略允许用户通过特定的标记（marker）来手动指定哪些测试用例应该被分配到同一个组中，并在同一个进程中执行。
+   - 这为测试用例的分组提供了极大的灵活性。用户可以根据实际的测试需求，将相关的测试用例标记为同一个组，并确保它们在同一进程中执行。
+   - 要使用 `loadgroup` 策略，你需要在测试用例或测试类上使用 pytest 的 `@pytest.mark.group(groupname)` 装饰器来指定组名。然后，在 pytest 的命令行参数中使用 `--dist=loadgroup` 来启用该策略。
+
+#### 并发执行的注意事项
+
+1. **测试用例独立性**：由于 pytest-xdist 并行执行测试用例，测试用例之间的顺序是不确定的。因此，如果测试用例之间需要共享数据或进行某种形式的同步操作，需要确保在使用 pytest-xdist 时正确处理这些情况。
+2. **并发和资源问题**：并行执行测试用例可能会引发并发问题，如资源竞争、死锁，并可能会占用大量的计算资源和内存。在设计测试用例时，要特别注意并发问题，并采取适当的措施来避免或解决这些问题。
