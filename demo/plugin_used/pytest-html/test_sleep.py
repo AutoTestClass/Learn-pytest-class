@@ -11,3 +11,7 @@ def test_two():
 
 def test_three():
     sleep(4)
+
+
+def test_four():
+    sleep(5)

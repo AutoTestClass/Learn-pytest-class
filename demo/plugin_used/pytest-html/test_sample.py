@@ -13,7 +13,7 @@ def test_fail():
 
 def test_error():
     """用例错误"""
-    raise Exception("这是一个错误")
+    a
 
 
 @pytest.mark.skip(reason="这是一个跳过的用例")
