@@ -1061,6 +1061,8 @@ pytest-xdist 还提供了其他有用的功能, `--looponfail` 标志：自动�
 
 这个功能更像是Web服务的热更新（热加载），用例一直处于运行状态，当测试用例发生改变时，pytest-xdist 会自动重新运行失败的测试用例。
 
+> 说明：在子进程中重复运行测试。每次运行后，pytest等待，直到项目中的文件发生更改，然后重新运行先前失败的测试。重复此操作，直到所有测试都通过，然后再次执行完整运行
+
 * 测试示例
 
 ```py
@@ -1113,24 +1115,188 @@ test_fail.py::test_fail
 
 pytest--xdist默认是无序执行的，可以通过`-dist`参数来控制执行顺序。
 
-* `-dist=loadscope`
-* `-dist=loadfile`
-* `-dist=loadgroup`
+* `--dist=load(默认)`
+* `--dist=loadscope`
+* `--dist=loadfile`
+* `--dist=loadgroup`
+* `--dist=worksteal`
+
+**`load`**: 
+  - 将挂起的测试发送到任何可用的工作线程，没有任何保证顺序。可以使用`-maxschedchunk` 选项对调度进行微调，请参见`pytest --help`的输出。
 
 **`loadscope`**:
-   - `loadscope` 是默认的分发策略。
-   - 它尝试将属于同一作用域（scope）的测试用例（如类级别的fixture）发送到同一个进程中去执行。这有助于确保依赖于相同作用域fixture的测试用例能够共享fixture的实例，从而减少重复设置和清理的开销。
-   - 在实践中，这意味着如果多个测试用例属于同一个测试类，并且该类使用了类级别的fixture，那么这些测试用例可能会被发送到同一个进程中去执行。
+  - `loadscope` 是默认的分发策略。
+  - 它尝试将属于同一作用域（scope）的测试用例（如类级别的fixture）发送到同一个进程中去执行。这有助于确保依赖于相同作用域fixture的测试用例能够共享fixture的实例，从而减少重复设置和清理的开销。
+  - 在实践中，这意味着如果多个测试用例属于同一个测试类，并且该类使用了类级别的fixture，那么这些测试用例可能会被发送到同一个进程中去执行。
 
 **`loadfile`**:
-   - 使用 `loadfile` 策略时，pytest 会尽量将同一个文件中的测试用例发送到同一个进程中去执行。
-   - 这种策略适用于那些测试用例之间高度独立，但文件内部可能存在一些共享资源或状态的情况。通过保持文件内的测试用例在同一个进程中执行，可以减少跨进程通信的开销，并可能提高测试执行的效率。
-   - 然而，需要注意的是，如果文件内的测试用例之间存在复杂的依赖关系，或者需要共享某些资源（这些资源不是通过fixture管理的），那么使用 `loadfile` 策略可能会导致问题。
+  - 使用 `loadfile` 策略时，pytest 会尽量将同一个文件中的测试用例发送到同一个进程中去执行。
+  - 这种策略适用于那些测试用例之间高度独立，但文件内部可能存在一些共享资源或状态的情况。通过保持文件内的测试用例在同一个进程中执行，可以减少跨进程通信的开销，并可能提高测试执行的效率。
+  - 然而，需要注意的是，如果文件内的测试用例之间存在复杂的依赖关系，或者需要共享某些资源（这些资源不是通过fixture管理的），那么使用 `loadfile` 策略可能会导致问题。
 
 **`loadgroup`**:
-   - `loadgroup` 策略允许用户通过特定的标记（marker）来手动指定哪些测试用例应该被分配到同一个组中，并在同一个进程中执行。
-   - 这为测试用例的分组提供了极大的灵活性。用户可以根据实际的测试需求，将相关的测试用例标记为同一个组，并确保它们在同一进程中执行。
-   - 要使用 `loadgroup` 策略，你需要在测试用例或测试类上使用 pytest 的 `@pytest.mark.group(groupname)` 装饰器来指定组名。然后，在 pytest 的命令行参数中使用 `--dist=loadgroup` 来启用该策略。
+  - `loadgroup` 策略允许用户通过特定的标记（marker）来手动指定哪些测试用例应该被分配到同一个组中，并在同一个进程中执行。
+  - 这为测试用例的分组提供了极大的灵活性。用户可以根据实际的测试需求，将相关的测试用例标记为同一个组，并确保它们在同一进程中执行。
+  - 要使用 `loadgroup` 策略，你需要在测试用例或测试类上使用 pytest 的 `@pytest.mark.group(groupname)` 装饰器来指定组名。然后，在 pytest 的命令行参数中使用 `--dist=loadgroup` 来启用该策略。
+
+**`worksteal`**
+  - 首先，测试用例会均匀地分配给所有可用的 worker。当一个 worker 完成其分配到的大部分测试用例，并且其队列中的剩余测试用例不足以维持该 worker 继续工作时（当前，每个 worker 的队列中至少需要有两个测试用例才能继续执行），该 worker 会尝试从其他 worker 的队列中“窃取”一部分测试用例来执行。这种策略的结果应该与 load 方法类似，但 worksteal 应该能够更好地处理执行时间差异显著的测试用例，并且同时提供相似或更好的 fixture 复用。
+
+__补充示例__
+
+- pytest-xdist标签代码示例：
+
+```python
+import pytest
+
+
+@pytest.mark.xdist_group(name="group1")
+def test1():
+    pass
+
+
+@pytest.mark.xdist_group(name="group2")
+def test2():
+    pass
+
+
+class TestA:
+    @pytest.mark.xdist_group("group1")
+    def test3(self):
+        pass
+```
+
+- 运行结果
+
+```shell
+pytest -vs --dist=loadgroup -n 2  test_tag.py
+
+...
+2 workers [3 items]
+scheduling tests via LoadGroupScheduling
+
+test_tag.py::test2@group2
+test_tag.py::test1@group1
+[gw1] PASSED test_tag.py::test2@group2     --> group2
+[gw0] PASSED test_tag.py::test1@group1     --> group1
+test_tag.py::TestA::test3@group1
+[gw0] PASSED test_tag.py::TestA::test3@group1  --> group1
+...
+```
+
+#### 完成一些专业任务
+
+使用 pytest-xdist 完成一些专业任务。
+
+__在测试中识别工作进程__
+
+如果你需要在测试或固定装置中确定工作进程的身份，你可以使用 `worker_id` 固定装置来实现：
+
+* conftest.py配置
+
+```python
+import pytest
+
+
+@pytest.fixture()
+def user_account(worker_id):
+    """在每个 xdist 工作进程中使用不同的账户"""
+    print("worker id", worker_id)
+    if worker_id == "gw0":
+        return "tom"
+    elif worker_id == "gw1":
+        return "jack"
+    else:
+        return "master"
+```
+
+当 `xdist` 被禁用（例如使用 `-n0` 运行时），`worker_id` 将返回 `"master"`。
+
+
+__唯一标识当前测试运行__
+
+如果你需要在工作进程中全局区分一个测试运行与下一次的测试运行，你可以使用 `testrun_uid` 固定装置。例如，假设你想要为每个测试运行创建一个单独的数据库：
+
+```python
+import pytest
+
+@pytest.fixture(scope="session", autouse=True)
+def create_unique_database(testrun_uid):
+    """为特定的测试运行创建一个唯一的数据库"""
+    database_url = f"psql://myapp-{testrun_uid}"
+    return database_url
+```
+
+这个机制对于并行测试非常有用，因为它允许你为每个独立的测试运行创建和管理资源（如数据库、文件等），而不会相互干扰。即使在并行测试中，多个进程同时运行，每个进程也都会使用相同的 testrun_uid，因为这个标识符是针对整个测试运行的，而不是针对单个进程的。
+
+简而言之，testrun_uid 确保了：
+
+* 同一次测试运行中的所有进程共享同一个唯一标识符。
+* 不同次的测试运行，即使在同一个项目中，也会有各自不同的唯一标识符。
+
+此外，在测试运行期间，还定义了以下环境变量：
+
+- `PYTEST_XDIST_TESTRUNUID`：测试运行的唯一 ID。
+
+
+__确保session作用域固定装置只执行一次__
+
+`pytest-xdist` 设计为每个工作进程执行自己的集合，并执行所有测试的一个子集。这意味着在不同进程中请求高级别作用域固定装置（例如 `session`）的测试将多次执行固定装置代码，这打破了预期，可能在某些情况下是不希望的。
+
+虽然 `pytest-xdist` 没有内置支持确保会话作用域固定装置恰好执行一次，但可以通过使用锁文件进行进程间通信来实现。
+
+下面的示例需要只执行一次固定装置 `session_data`（因为它是资源密集型的，或者只需要执行一次来定义配置选项等），因此它使用了 FileLock 来在第一个进程请求固定装置时只生成一次固定装置数据，而其他进程则从文件中读取数据。
+
+以下是代码：
+
+```python
+import json
+import pytest
+from filelock import FileLock
+
+@pytest.fixture(scope="session")
+def session_data(tmp_path_factory, worker_id):
+    if worker_id == "master":
+        # 不是在多个工作进程中执行，只是生成数据并让
+        # pytest 的固定装置缓存做它的工作
+        return produce_expensive_data()
+
+    # 获取所有工作进程共享的临时目录
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+
+    fn = root_tmp_dir / "data.json"
+    with FileLock(str(fn) + ".lock"):
+        if fn.is_file():
+            data = json.loads(fn.read_text())
+        else:
+            data = produce_expensive_data()
+            fn.write_text(json.dumps(data))
+    return data
+```
+
+上述示例也可以在固定装置需要每个测试会话恰好执行一次的情况下使用，例如初始化数据库服务并填充初始表。
+
+这种技术可能不适用于每种情况，但应该是许多情况下的起点，其中执行高作用域固定装置恰好一次是重要的。
+
+__为每个工作进程创建一个日志文件__
+
+要为 `pytest-xdist` 的每个工作进程创建一个日志文件，你可以利用 `PYTEST_XDIST_WORKER` 为每个工作进程生成一个唯一的文件名。
+
+* conftest.py配置
+
+```python
+# conftest.py 的内容
+def pytest_configure(config):
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER")
+    if worker_id is not None:
+        logging.basicConfig(
+            format=config.getini("log_file_format"),
+            filename=f"tests_{worker_id}.log",
+            level=config.getini("log_file_level"),
+        )
+```
+
+例如，使用 `-n3` 运行测试时，将在当前目录中创建三个文件：`tests_gw0.log`、`tests_gw1.log` 和 `tests_gw2.log`。
 
 #### 并发执行的注意事项
 
