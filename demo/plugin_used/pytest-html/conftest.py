@@ -48,17 +48,17 @@ def pytest_runtest_makereport(item):
     用于向测试用例中添加用例的开始时间、内部注释，和失败截图等.
     :param item:
     """
-    # global driver
-    # pytest_html = item.config.pluginmanager.getplugin('html')
+    global driver
+    pytest_html = item.config.pluginmanager.getplugin('html')
     outcome = yield
     report = outcome.get_result()
     report.description = str(item.function.__doc__)
-    # extra = getattr(report, 'extra', [])
-    # if report.when == 'call' or report.when == "setup":
-    #     xfail = hasattr(report, 'wasxfail')
-    #     if (report.skipped and xfail) or (report.failed and not xfail):
-    #         img_base64 = "data:image/jpg;base64," + driver.get_screenshot_as_base64()
-    #         if img_base64:
-    #             html = '<div><img src="%s" align="right" style="width:304px;height:228px;" class="img"/></div>' % img_base64
-    #             extra.append(pytest_html.extras.html(html))
-    #     report.extras = extra
+    extra = getattr(report, 'extra', [])
+    if report.when == 'call' or report.when == "setup":
+        xfail = hasattr(report, 'wasxfail')
+        if (report.skipped and xfail) or (report.failed and not xfail):
+            img_base64 = "data:image/jpg;base64," + driver.get_screenshot_as_base64()
+            if img_base64:
+                html = '<div><img src="%s" align="right" style="width:304px;height:228px;" class="img"/></div>' % img_base64
+                extra.append(pytest_html.extras.html(html))
+        report.extras = extra

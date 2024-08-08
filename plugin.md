@@ -229,13 +229,7 @@ def pytest_runtest_makereport(item, brw):
     if report.when == 'call' or report.when == "setup":
         xfail = hasattr(report, 'wasxfail')
         if (report.skipped and xfail) or (report.failed and not xfail):
-            case_path = report.nodeid.replace("::", "_") + ".png"
-            if "[" in case_path:
-                case_name = case_path.split("-")[0] + "].png"
-            else:
-                case_name = case_path
             img_base64 = "data:image/jpg;base64," + driver.get_screenshot_as_base64()
-
             if img_base64:
                 html = '<div><img src="%s" align="right" style="width:304px;height:228px;display: block;" class="img"/></div>' % img_base64
                 extra.append(pytest_html.extras.html(html))
@@ -410,14 +404,15 @@ Server started at <http://192.168.43.203:8976/>. Press <Ctrl+C> to exit
 
 ![](./image/allure-report.png)
 
-
 #### 编写测试
 
 参考文档：https://allurereport.org/docs/pytest/
 
-Allure Pytest 适配器不仅收集 pytest 标准特性所提供的数据，还提供了额外的功能，帮助您编写更好的测试。本节列出了使用 pytest 和 Allure Pytest 特性改进测试的几种最显著的方法。
+Allure Pytest 适配器不仅收集 pytest 标准特性所提供的数据，还提供了额外的功能，帮助您编写更好的测试。本节列出了使用 pytest 和
+Allure Pytest 特性改进测试的几种最显著的方法。
 
 使用 Allure Pytest，您可以：
+
 - 提供描述、链接和其他元数据，
 - 将测试组织成层次结构，
 - 将测试细分为更小的、易于阅读的测试步骤，
@@ -431,6 +426,7 @@ Allure Pytest 适配器不仅收集 pytest 标准特性所提供的数据，还�
 您可以向每个测试添加大量元数据，以便它们在报告中显示。有关更多详细信息，请参阅参考文档。
 
 对于每个元数据字段，有多种方法可以分配它。
+
 - 在测试函数体内调用 Allure 的函数。这种方法称为“动态”，因为它允许您在将值传递给方法之前，在运行时构造字符串和其他值。
 - 使用 Allure 的函数作为测试函数或测试类的装饰器。
 - 将 Allure 的函数作为 pytest 标记添加到模块或包（请参阅 pytest 文档中的标记整个类或模块部分）。
@@ -439,6 +435,7 @@ Allure Pytest 适配器不仅收集 pytest 标准特性所提供的数据，还�
 
 ```python
 import allure
+
 
 @allure.title("测试认证")
 @allure.description("此测试尝试使用登录名和密码登录网站。如果发生任何错误则失败。\n\n注意，此测试不测试双因素认证。")
@@ -454,12 +451,14 @@ def test_authentication():
 
 ##### 组织测试
 
-如在测试报告中改进导航所述，Allure 支持多种将测试组织成层次结构的方法。Allure Pytest 提供函数，通过添加装饰器或标记或调用“动态”函数（与元数据字段相同），分配相关字段到测试。
+如在测试报告中改进导航所述，Allure 支持多种将测试组织成层次结构的方法。Allure Pytest
+提供函数，通过添加装饰器或标记或调用“动态”函数（与元数据字段相同），分配相关字段到测试。
 
 要指定测试在基于行为的层次结构中的位置：
 
 ```python
 import allure
+
 
 @allure.epic("Web 界面")
 @allure.feature("基础功能")
@@ -471,8 +470,10 @@ def test_story_level():
 ![](./image/allure-report-01.png)
 
 要指定测试在基于套件的层次结构中的位置：
+
 ```python
 import allure
+
 
 @allure.parent_suite("Web 界面测试")
 @allure.suite("基础功能测试")
@@ -492,10 +493,12 @@ Allure Pytest 提供了两种创建步骤和子步骤的方法：“装饰步骤
 ```python
 import allure
 
+
 def test_example():
     steps = Steps()
     steps.step1()
     steps.step2()
+
 
 class Steps:
     @allure.step("步骤 1")
@@ -531,9 +534,11 @@ class Login:
 
 ##### 描述参数化测试
 
-当使用参数化测试模式时，Allure Pytest 自动将参数值添加到测试报告中。Allure 支持 pytest 支持的所有参数化测试方法，包括为 fixtures 声明参数。
+当使用参数化测试模式时，Allure Pytest 自动将参数值添加到测试报告中。Allure 支持 pytest 支持的所有参数化测试方法，包括为
+fixtures 声明参数。
 
 此外，您可以：
+
 - 将参数的值纳入测试标题，请参阅 `title()`；
 - 手动添加一个伪参数，请参阅 `parameter()`。
 - 用更易读的表示法覆盖参数的值，请参阅 `parameter()`。
@@ -544,6 +549,7 @@ from os.path import basename, expanduser
 import allure
 import pytest
 
+
 @pytest.mark.parametrize("login", [
     "johndoe",
     "johndoe@example.com",
@@ -552,9 +558,11 @@ import pytest
 def test_authentication(login):
     ...
 
+
 def test_authentication_with_empty_login():
     allure.dynamic.parameter("login", "(空)")
     ...
+
 
 @pytest.mark.parametrize("ssh_key", [
     expanduser("~/.ssh/id_rsa1"),
@@ -570,13 +578,16 @@ def test_authentication_with_ssh_key(ssh_key):
 
 ##### 描述 fixtures
 
-pytest 的 **fixtures** 概念为每个测试提供了一种方法，只需通过指定函数参数名称来定义它所需的特性。一些 fixtures 由 pytest 自身提供，其他可以由额外的库或您自己的代码提供。有关更多详细信息，请参阅 pytest 文档。
+pytest 的 **fixtures** 概念为每个测试提供了一种方法，只需通过指定函数参数名称来定义它所需的特性。一些 fixtures 由 pytest
+自身提供，其他可以由额外的库或您自己的代码提供。有关更多详细信息，请参阅 pytest 文档。
 
-在测试报告中显示测试时，Allure 显示与 fixtures 相关的操作类似于它显示测试步骤的方式。为了更容易理解 fixture 的目的，您可以使用 `@allure.title()` 装饰器指定其标题。
+在测试报告中显示测试时，Allure 显示与 fixtures 相关的操作类似于它显示测试步骤的方式。为了更容易理解 fixture
+的目的，您可以使用 `@allure.title()` 装饰器指定其标题。
 
 ```python
 import allure
 import pytest
+
 
 @pytest.fixture()
 @allure.title("为测试做准备")
@@ -584,25 +595,30 @@ def my_fixture():
     ...  # 设置
     yield
     ...  # 拆除
+
+
 def test_with_my_fixture(my_fixture):
     ...
 ```
 
 ##### 附加屏幕截图和其他文件
 
-您可以将各种类型的文件附加到您的 Allure 报告中。例如，使报告更容易理解的一种流行方法是在某个特定点附加用户界面的屏幕截图。为此，请使用 `allure.attach()` 或 `allure.attach.file()`。
+您可以将各种类型的文件附加到您的 Allure
+报告中。例如，使报告更容易理解的一种流行方法是在某个特定点附加用户界面的屏幕截图。为此，请使用 `allure.attach()`
+或 `allure.attach.file()`。
 
 1. **`allure.attach()`**：
-   - 这个方法主要用于在测试报告中附加文本信息、截图、或HTML内容等。
-   - 它不仅限于文件，也可以用于直接在报告中嵌入字符串或HTML格式的内容。
-   - 当需要向报告中添加一些执行中的动态信息或数据时，这个方法非常有用。
+    - 这个方法主要用于在测试报告中附加文本信息、截图、或HTML内容等。
+    - 它不仅限于文件，也可以用于直接在报告中嵌入字符串或HTML格式的内容。
+    - 当需要向报告中添加一些执行中的动态信息或数据时，这个方法非常有用。
 
 2. **`allure.attach.file()`**：
-   - 这个方法是 `allure.attach()` 的一个特化版本，专门用于附加文件到测试报告中。
-   - 它主要用于附加静态文件，如截图、视频或数据文件等。
-   - 与 `allure.attach()` 相比，`allure.attach.file()` 提供了更清晰的语义，表示正在附加一个文件。
+    - 这个方法是 `allure.attach()` 的一个特化版本，专门用于附加文件到测试报告中。
+    - 它主要用于附加静态文件，如截图、视频或数据文件等。
+    - 与 `allure.attach()` 相比，`allure.attach.file()` 提供了更清晰的语义，表示正在附加一个文件。
 
-`allure.attach()` 是一个更通用的方法，可用于附加文本、HTML和文件等内容，而 `allure.attach.file()` 是专门用于附加文件的便捷方法，提供了更清晰的API。在实际使用中，你可以根据具体需求选择使用哪一个。
+`allure.attach()` 是一个更通用的方法，可用于附加文本、HTML和文件等内容，而 `allure.attach.file()`
+是专门用于附加文件的便捷方法，提供了更清晰的API。在实际使用中，你可以根据具体需求选择使用哪一个。
 
 __准备工作__
 
@@ -621,7 +637,6 @@ __准备工作__
 ```
 
 __使用示例__
-
 
 ```python
 import allure
@@ -656,11 +671,11 @@ __附加数据__
 
 默认情况下，Allure Pytest 将以下数据作为附加伪文件添加：
 
-| 附件名称 | 内容                                                                   |
-| -------- | ---------------------------------------------------------------------- |
+| 附件名称     | 内容                                                        |
+|----------|-----------------------------------------------------------|
 | `stdout` | 所有写入 `sys.stdout` 的数据，例如通过 `print(...)`。                  |
 | `stderr` | 所有写入 `sys.stderr` 的数据，例如通过 `print(..., file=sys.stderr)`。 |
-| `log`    | 所有记录到标准日志机制的数据，例如通过 `logging.debug(...)`。          |
+| `log`    | 所有记录到标准日志机制的数据，例如通过 `logging.debug(...)`。                 |
 
 此行为可以通过 `--allure-no-capture` 选项禁用。
 
@@ -686,7 +701,6 @@ python -m pytest
 要提供环境信息，请在运行测试后将名为 `environment.properties` 的文件放入 `allure-results` 目录中。请参阅环境文件中的示例。
 
 请注意，此功能应用于报告中所有测试的属性不发生变化的情况。如果您有对不同测试可能不同的属性，请考虑使用参数化测试。
-
 
 ### pytest-base-url
 
@@ -1054,7 +1068,6 @@ __并发数与用例数：__
 1. `并发数大于用例数`，则每个进程都会运行一个用例，多设置的进程会空闲。
 2. `并发数小于用例数`，先分配给进程每人一个用例，最早空闲出的进程继续运行后面的用例。
 
-
 #### 自动重新运行失败的用例
 
 pytest-xdist 还提供了其他有用的功能, `--looponfail` 标志：自动重新运行失败的测试。**注意：这个功能并不是失败重跑**
@@ -1121,26 +1134,38 @@ pytest--xdist默认是无序执行的，可以通过`-dist`参数来控制执行
 * `--dist=loadgroup`
 * `--dist=worksteal`
 
-**`load`**: 
-  - 将挂起的测试发送到任何可用的工作线程，没有任何保证顺序。可以使用`-maxschedchunk` 选项对调度进行微调，请参见`pytest --help`的输出。
+**`load`**:
+
+- 将挂起的测试发送到任何可用的工作线程，没有任何保证顺序。可以使用`-maxschedchunk`
+  选项对调度进行微调，请参见`pytest --help`的输出。
 
 **`loadscope`**:
-  - `loadscope` 是默认的分发策略。
-  - 它尝试将属于同一作用域（scope）的测试用例（如类级别的fixture）发送到同一个进程中去执行。这有助于确保依赖于相同作用域fixture的测试用例能够共享fixture的实例，从而减少重复设置和清理的开销。
-  - 在实践中，这意味着如果多个测试用例属于同一个测试类，并且该类使用了类级别的fixture，那么这些测试用例可能会被发送到同一个进程中去执行。
+
+- `loadscope` 是默认的分发策略。
+- 它尝试将属于同一作用域（scope）的测试用例（如类级别的fixture）发送到同一个进程中去执行。这有助于确保依赖于相同作用域fixture的测试用例能够共享fixture的实例，从而减少重复设置和清理的开销。
+- 在实践中，这意味着如果多个测试用例属于同一个测试类，并且该类使用了类级别的fixture，那么这些测试用例可能会被发送到同一个进程中去执行。
 
 **`loadfile`**:
-  - 使用 `loadfile` 策略时，pytest 会尽量将同一个文件中的测试用例发送到同一个进程中去执行。
-  - 这种策略适用于那些测试用例之间高度独立，但文件内部可能存在一些共享资源或状态的情况。通过保持文件内的测试用例在同一个进程中执行，可以减少跨进程通信的开销，并可能提高测试执行的效率。
-  - 然而，需要注意的是，如果文件内的测试用例之间存在复杂的依赖关系，或者需要共享某些资源（这些资源不是通过fixture管理的），那么使用 `loadfile` 策略可能会导致问题。
+
+- 使用 `loadfile` 策略时，pytest 会尽量将同一个文件中的测试用例发送到同一个进程中去执行。
+- 这种策略适用于那些测试用例之间高度独立，但文件内部可能存在一些共享资源或状态的情况。通过保持文件内的测试用例在同一个进程中执行，可以减少跨进程通信的开销，并可能提高测试执行的效率。
+-
+然而，需要注意的是，如果文件内的测试用例之间存在复杂的依赖关系，或者需要共享某些资源（这些资源不是通过fixture管理的），那么使用 `loadfile`
+策略可能会导致问题。
 
 **`loadgroup`**:
-  - `loadgroup` 策略允许用户通过特定的标记（marker）来手动指定哪些测试用例应该被分配到同一个组中，并在同一个进程中执行。
-  - 这为测试用例的分组提供了极大的灵活性。用户可以根据实际的测试需求，将相关的测试用例标记为同一个组，并确保它们在同一进程中执行。
-  - 要使用 `loadgroup` 策略，你需要在测试用例或测试类上使用 pytest 的 `@pytest.mark.group(groupname)` 装饰器来指定组名。然后，在 pytest 的命令行参数中使用 `--dist=loadgroup` 来启用该策略。
+
+- `loadgroup` 策略允许用户通过特定的标记（marker）来手动指定哪些测试用例应该被分配到同一个组中，并在同一个进程中执行。
+- 这为测试用例的分组提供了极大的灵活性。用户可以根据实际的测试需求，将相关的测试用例标记为同一个组，并确保它们在同一进程中执行。
+- 要使用 `loadgroup` 策略，你需要在测试用例或测试类上使用 pytest 的 `@pytest.mark.group(groupname)` 装饰器来指定组名。然后，在
+  pytest 的命令行参数中使用 `--dist=loadgroup` 来启用该策略。
 
 **`worksteal`**
-  - 首先，测试用例会均匀地分配给所有可用的 worker。当一个 worker 完成其分配到的大部分测试用例，并且其队列中的剩余测试用例不足以维持该 worker 继续工作时（当前，每个 worker 的队列中至少需要有两个测试用例才能继续执行），该 worker 会尝试从其他 worker 的队列中“窃取”一部分测试用例来执行。这种策略的结果应该与 load 方法类似，但 worksteal 应该能够更好地处理执行时间差异显著的测试用例，并且同时提供相似或更好的 fixture 复用。
+
+- 首先，测试用例会均匀地分配给所有可用的 worker。当一个 worker 完成其分配到的大部分测试用例，并且其队列中的剩余测试用例不足以维持该
+  worker 继续工作时（当前，每个 worker 的队列中至少需要有两个测试用例才能继续执行），该 worker 会尝试从其他 worker
+  的队列中“窃取”一部分测试用例来执行。这种策略的结果应该与 load 方法类似，但 worksteal 应该能够更好地处理执行时间差异显著的测试用例，并且同时提供相似或更好的
+  fixture 复用。
 
 __补充示例__
 
@@ -1212,13 +1237,13 @@ def user_account(worker_id):
 
 当 `xdist` 被禁用（例如使用 `-n0` 运行时），`worker_id` 将返回 `"master"`。
 
-
 __唯一标识当前测试运行__
 
 如果你需要在工作进程中全局区分一个测试运行与下一次的测试运行，你可以使用 `testrun_uid` 固定装置。例如，假设你想要为每个测试运行创建一个单独的数据库：
 
 ```python
 import pytest
+
 
 @pytest.fixture(scope="session", autouse=True)
 def create_unique_database(testrun_uid):
@@ -1227,7 +1252,8 @@ def create_unique_database(testrun_uid):
     return database_url
 ```
 
-这个机制对于并行测试非常有用，因为它允许你为每个独立的测试运行创建和管理资源（如数据库、文件等），而不会相互干扰。即使在并行测试中，多个进程同时运行，每个进程也都会使用相同的 testrun_uid，因为这个标识符是针对整个测试运行的，而不是针对单个进程的。
+这个机制对于并行测试非常有用，因为它允许你为每个独立的测试运行创建和管理资源（如数据库、文件等），而不会相互干扰。即使在并行测试中，多个进程同时运行，每个进程也都会使用相同的
+testrun_uid，因为这个标识符是针对整个测试运行的，而不是针对单个进程的。
 
 简而言之，testrun_uid 确保了：
 
@@ -1238,14 +1264,16 @@ def create_unique_database(testrun_uid):
 
 - `PYTEST_XDIST_TESTRUNUID`：测试运行的唯一 ID。
 
-
 __确保session作用域固定装置只执行一次__
 
-`pytest-xdist` 设计为每个工作进程执行自己的集合，并执行所有测试的一个子集。这意味着在不同进程中请求高级别作用域固定装置（例如 `session`）的测试将多次执行固定装置代码，这打破了预期，可能在某些情况下是不希望的。
+`pytest-xdist`
+设计为每个工作进程执行自己的集合，并执行所有测试的一个子集。这意味着在不同进程中请求高级别作用域固定装置（例如 `session`
+）的测试将多次执行固定装置代码，这打破了预期，可能在某些情况下是不希望的。
 
 虽然 `pytest-xdist` 没有内置支持确保会话作用域固定装置恰好执行一次，但可以通过使用锁文件进行进程间通信来实现。
 
-下面的示例需要只执行一次固定装置 `session_data`（因为它是资源密集型的，或者只需要执行一次来定义配置选项等），因此它使用了 FileLock 来在第一个进程请求固定装置时只生成一次固定装置数据，而其他进程则从文件中读取数据。
+下面的示例需要只执行一次固定装置 `session_data`（因为它是资源密集型的，或者只需要执行一次来定义配置选项等），因此它使用了
+FileLock 来在第一个进程请求固定装置时只生成一次固定装置数据，而其他进程则从文件中读取数据。
 
 以下是代码：
 
@@ -1253,6 +1281,7 @@ __确保session作用域固定装置只执行一次__
 import json
 import pytest
 from filelock import FileLock
+
 
 @pytest.fixture(scope="session")
 def session_data(tmp_path_factory, worker_id):
@@ -1300,5 +1329,6 @@ def pytest_configure(config):
 
 #### 并发执行的注意事项
 
-1. **测试用例独立性**：由于 pytest-xdist 并行执行测试用例，测试用例之间的顺序是不确定的。因此，如果测试用例之间需要共享数据或进行某种形式的同步操作，需要确保在使用 pytest-xdist 时正确处理这些情况。
+1. **测试用例独立性**：由于 pytest-xdist 并行执行测试用例，测试用例之间的顺序是不确定的。因此，如果测试用例之间需要共享数据或进行某种形式的同步操作，需要确保在使用
+   pytest-xdist 时正确处理这些情况。
 2. **并发和资源问题**：并行执行测试用例可能会引发并发问题，如资源竞争、死锁，并可能会占用大量的计算资源和内存。在设计测试用例时，要特别注意并发问题，并采取适当的措施来避免或解决这些问题。

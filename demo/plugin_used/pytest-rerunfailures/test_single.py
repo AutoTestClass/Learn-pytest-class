@@ -8,6 +8,11 @@ def test_example_one():
     assert random.choice([True, False])
 
 
+def teardown_function(function):
+    print("teardown_function--->")
+    raise NameError("teardown NameError")
+
+
 @pytest.mark.flaky(reruns=2, reruns_delay=2)
 def test_example_two():
     import random
