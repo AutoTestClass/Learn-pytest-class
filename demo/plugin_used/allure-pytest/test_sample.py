@@ -1,6 +1,11 @@
 import pytest
 
 
+@pytest.fixture()
+def error_setup():
+    raise Exception("这是一个错误")
+
+
 def test_pass():
     """用例通过"""
     assert True
@@ -11,9 +16,9 @@ def test_fail():
     assert False
 
 
-def test_error():
+def test_error(error_setup):
     """用例错误"""
-    raise Exception("这是一个错误")
+    pass
 
 
 @pytest.mark.skip(reason="这是一个跳过的用例")
