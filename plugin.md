@@ -513,6 +513,9 @@ class Steps:
 步骤同样支持传参：
 
 ```python
+import allure
+
+
 def test_login():
     step = Login()
     step.step_with_input("admin", "pw123")
@@ -894,6 +897,9 @@ $ pytest --reruns 2 --rerun-except assert
 要标记个别测试为不稳定的，并在它们失败时自动重新运行，添加 `flaky` 标记，并指定希望测试运行的最大次数：
 
 ```python
+import pytest
+
+
 @pytest.mark.flaky(reruns=5)
 def test_example():
     import random
@@ -905,6 +911,9 @@ def test_example():
 也可以在标记中指定重新运行的延迟时间：
 
 ```python
+import pytest
+
+
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 def test_example():
     import random
@@ -1030,7 +1039,6 @@ def test_two():
 
 def test_three():
     sleep(4)
-
 ```
 
 * 示例命令：
@@ -1048,7 +1056,8 @@ pytest -v -n auto test_sample.py
 * 运行结果
 
 ```shell
-pytest -v -n auto .\test_sample.py
+pytest -v -n auto test_sample.py
+
 ================================ test session starts ================================
 8 workers [3 items]
 scheduling tests via LoadScheduling
@@ -1150,6 +1159,7 @@ pytest--xdist默认是无序执行的，可以通过`-dist`参数来控制执行
 - 使用 `loadfile` 策略时，pytest 会尽量将同一个文件中的测试用例发送到同一个进程中去执行。
 - 这种策略适用于那些测试用例之间高度独立，但文件内部可能存在一些共享资源或状态的情况。通过保持文件内的测试用例在同一个进程中执行，可以减少跨进程通信的开销，并可能提高测试执行的效率。
 -
+
 然而，需要注意的是，如果文件内的测试用例之间存在复杂的依赖关系，或者需要共享某些资源（这些资源不是通过fixture管理的），那么使用 `loadfile`
 策略可能会导致问题。
 
@@ -1314,6 +1324,10 @@ __为每个工作进程创建一个日志文件__
 * conftest.py配置
 
 ```python
+import os
+import logging
+
+
 # conftest.py 的内容
 def pytest_configure(config):
     worker_id = os.environ.get("PYTEST_XDIST_WORKER")
@@ -1332,3 +1346,194 @@ def pytest_configure(config):
 1. **测试用例独立性**：由于 pytest-xdist 并行执行测试用例，测试用例之间的顺序是不确定的。因此，如果测试用例之间需要共享数据或进行某种形式的同步操作，需要确保在使用
    pytest-xdist 时正确处理这些情况。
 2. **并发和资源问题**：并行执行测试用例可能会引发并发问题，如资源竞争、死锁，并可能会占用大量的计算资源和内存。在设计测试用例时，要特别注意并发问题，并采取适当的措施来避免或解决这些问题。
+
+### plugin开发
+
+一个插件包含一个或多个钩子函数。编写钩子函数章节详细解释了如何自己编写钩子函数的基本知识和细节。pytest通过调用以下插件中明确定义的钩子，实现了配置、收集、运行和报告的所有方面：
+
+• 内置插件：从pytest内部的_pytest目录加载。
+• 外部插件：通过setuptools的入口点发现的模块。
+• conftest.py插件：在测试目录中自动发现的模块。
+
+原则上，每个钩子调用都是一个1:N的Python函数调用，其中N是给定规范已注册的实现函数的数量。所有规范和实现都遵循`pytest_`
+前缀命名约定，这使得它们易于区分和查找。
+
+#### 内置插件
+
+pytest 的内置插件（builtin plugins）是 pytest 框架本身提供的一部分，它们直接包含在 pytest 的安装包中，并且从 pytest 的内部 _
+pytest 目录加载。由于这些插件是 pytest 的一部分，通常用户不需要（也不建议）直接修改或编写新的内置插件，除非你在为 pytest
+本身做贡献或进行深度定制。
+
+pytest安装包中包含的内置插件有：
+
+```py
+# pytest/__init__.py
+
+# PYTHON_ARGCOMPLETE_OK
+"""pytest: unit and functional testing with Python."""
+
+from _pytest import __version__
+from _pytest import version_tuple
+from _pytest._code import ExceptionInfo
+from _pytest.assertion import register_assert_rewrite
+from _pytest.cacheprovider import Cache
+from _pytest.capture import CaptureFixture
+from _pytest.config import cmdline
+from _pytest.config import Config
+from _pytest.config import console_main
+from _pytest.config import ExitCode
+from _pytest.config import hookimpl
+from _pytest.config import hookspec
+from _pytest.config import main
+from _pytest.config import PytestPluginManager
+from _pytest.config import UsageError
+from _pytest.config.argparsing import OptionGroup
+from _pytest.config.argparsing import Parser
+from _pytest.debugging import pytestPDB as __pytestPDB
+from _pytest.doctest import DoctestItem
+from _pytest.fixtures import fixture
+from _pytest.fixtures import FixtureDef
+from _pytest.fixtures import FixtureLookupError
+from _pytest.fixtures import FixtureRequest
+from _pytest.fixtures import yield_fixture
+from _pytest.freeze_support import freeze_includes
+from _pytest.legacypath import TempdirFactory
+from _pytest.legacypath import Testdir
+from _pytest.logging import LogCaptureFixture
+from _pytest.main import Dir
+from _pytest.main import Session
+from _pytest.mark import Mark
+from _pytest.mark import MARK_GEN as mark
+from _pytest.mark import MarkDecorator
+from _pytest.mark import MarkGenerator
+from _pytest.mark import param
+
+...
+
+```
+
+##### 编写内部插件
+
+我们也可以在项目中编写内部插件。
+
+```
+└───mytest/
+|  |───myplugin.py
+|  |───conftest.py
+|  └───test_sample.py
+```
+
+1. 创建一个名为 `myplugin.py` 的文件，并添加以下内容：
+
+```py
+# myplugin.py
+
+# 这是 pytest 的一个钩子函数，它会在每个测试函数之前被调用
+def pytest_runtest_setup(item):
+    print(f"\nSetting up for test: {item.name}")
+
+
+# 这是 pytest 的一个钩子函数，它会在每个测试函数之后被调用
+def pytest_runtest_teardown(item):
+    print(f"\nTearing down after test: {item.name}")
+
+```
+
+2. 创建一个名为 `conftest.py` 的文件，并添加以下内容：
+
+```py
+# conftest.py
+
+from pathlib import Path
+import sys
+
+current_file = Path(__file__)
+sys.path.insert(0, str(current_file.parent))
+
+# 加载插件
+pytest_plugins = ['myplugin']
+```
+
+3. 创建一个名为 `test_sample.py` 的文件，并添加以下内容：
+
+```py
+# test_sample.py
+def test_sample():
+    assert 1 == 1
+```
+
+#### conftest.py本地目录插件
+
+本地conftest.py插件包含特定于目录的钩子实现。钩子会话和测试运行活动将调用在更接近文件系统根目录的conftest.py文件中定义的所有钩子。
+
+实现`pytest_runtest_setup`钩子的示例，以便在子目录中的测试被调用，但在其他目录中不被调用：
+
+```
+└───mytest/
+|  |───a/
+|  |   |───conftest.py
+|  |   └───test_sub.py
+|  └───test_sample.py
+```
+
+以下是示例代码：
+
+```py
+# a/conftest .py:
+def pytest_runtest_setup(item):
+    #  called  for  running  each  test  in   'a'  directory 
+    print("setting  up", item)
+
+
+# a/test_sub .py:
+def test_sub():
+    pass
+
+
+# test_sample.py:
+def test_sample():
+    pass
+```
+
+以下是运行它的方式：
+
+```shell
+pytest -vs test_flat .py    #  will  not  show  "setting  up" 
+pytest -vs a/test_sub .py #  will  show  "setting  up"
+```
+
+> 注意：如果你有不在Python包目录（即包含__init__.py的目录）中的conftest.py文件，那么“import
+>
+conftest”可能会产生歧义，因为在你的PYTHONPATH或sys.path上可能还有其他conftest.py文件。因此，项目的良好做法是将conftest.py放在包作用域下，或者从不从conftest.py文件中导入任何内容。
+
+#### 外部插件
+
+如果你希望让你的插件对外可用，你可以为你的分发定义一个所谓的入口点，这样 pytest 就能找到你的插件模块。入口点是 setuptools
+提供的一个功能。
+
+pytest 通过查找 pytest11 入口点来发现其插件，因此，你可以在你的 pyproject.toml 文件中定义它，从而使你的插件可用。
+
+```ini
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name  =  "myproject"
+classifiers = [
+  "Framework::Pytest", 
+]
+
+[project .entry-points .pytest11]
+myproject = "myproject.pluginmodule"
+```
+
+如果一个包以这种方式安装，pytest将加载`myproject.pluginmodule` 作为一个插件定义hooks。使用`pytest --trace-config` 确认注册。
+
+
+> 注意:确保包含`Framework:: Pytest` 在你的列表的PyPI classifiers中。这有助于在 PyPI 上搜索你的插件，并确保你的插件被正确地分类。
+
+__学习项目__
+
+* https://github.com/defnngj/pytest-hello
+* https://github.com/SeldomQA/pytest-req
